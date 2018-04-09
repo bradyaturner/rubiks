@@ -7,22 +7,24 @@ This project is an OpenGL Rubik's Cube visualizer and solver written in C.
 * [OpenGL Wiki](https://www.khronos.org/opengl/wiki/Main_Page)
 * [Draw a Cube in OpenGL](https://www.wikihow.com/Make-a-Cube-in-OpenGL)
 
-## Setup
+## How to use
+
+### Setup
 ```bash
 sudo apt-get install freeglut3-dev
 ```
 
-## Build
+### Build
 ```bash
 make
 ```
 
-## Run
+### Run
 ```bash
 ./rubiks
 ```
 
-## Clean
+### Clean
 ```bash
 make clean
 ```
