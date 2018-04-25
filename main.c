@@ -101,6 +101,9 @@ void keyboardHandler(unsigned char key, int x, int y) {
 			glutDestroyWindow(windowId); // should I check if this is initialized?
 			exit(0);
 			break;
+		case 49:
+			rotateCubeFace(&rubiksCube, 1, 1);
+			break;
 	}
 	glutPostRedisplay();
 }
