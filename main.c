@@ -8,6 +8,8 @@
 #include <GL/glut.h>
 #endif
 
+#include "cube.h"
+
 typedef struct {
 	float x;
 	float y;
@@ -19,22 +21,22 @@ typedef struct{
     Vec3f ur;
 } Rectangle;
 
-typedef struct {
-	float red;
-	float green;
-	float blue;
-} RGB3f;
-
+void initialize();
 void display();
-void specialKeys();
 void drawRubiksCube();
-void drawCube(Vec3f centerCoord);
+void drawCube(Cube cube, Vec3f centerCoord);
 void drawRectangle(Vec3f ll, Vec3f ur, RGB3f color);
+void specialKeys( int key, int x, int y );
+void keyboardHandler(unsigned char key, int x, int y);
 
 double rotate_y=0; 
 double rotate_x=0;
 
 double cubeWidth = 0.3;
+
+int windowId;
+
+Rubiks rubiksCube;
 
 void display(){
 
@@ -62,11 +64,15 @@ void display(){
 }
 
 void drawRubiksCube(){
+	// TODO there has to be a smarter way to do this math
+	int i = 0;
 	for(int x=-1; x<=1; x++){
 		for(int y=-1; y<=1; y++){
 			for(int z=-1; z<=1; z++){
 				Vec3f cubeCoord = {x*cubeWidth, y*cubeWidth, z*cubeWidth};
-				drawCube(cubeCoord);
+				int cubeNum = findCube(&rubiksCube, i);
+				drawCube(rubiksCube.cubes[cubeNum], cubeCoord);
+				i++;
 			}
 		}
 	}
@@ -86,13 +92,32 @@ void specialKeys( int key, int x, int y ) {
 	glutPostRedisplay();
 }
 
+void keyboardHandler(unsigned char key, int x, int y) {
+	switch (key)
+	{
+		case 27:
+		case 81:
+		case 113:
+			glutDestroyWindow(windowId); // should I check if this is initialized?
+			exit(0);
+			break;
+	}
+	glutPostRedisplay();
+}
+
+void initialize() {
+	initializeRubiks(&rubiksCube);
+}
+
 int main( int argc, char* argv[] ){
+	initialize();
 	glutInit(&argc,argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-	glutCreateWindow("Rubik's Cube");
+	windowId = glutCreateWindow("Rubik's Cube");
 	glEnable(GL_DEPTH_TEST);
 	glutDisplayFunc(display);
 	glutSpecialFunc(specialKeys);
+	glutKeyboardFunc(keyboardHandler);
 	glClearColor(0.3, 0.3, 0.3, 0.0);
 
 	glutMainLoop();
@@ -151,39 +176,41 @@ void drawRectangle(Vec3f ll, Vec3f ur, RGB3f color){
 	drawSquare(lr, ur, ul, ll, color);
 }
 
-void drawCube(Vec3f centerCoord) {
+void drawCube(Cube cube, Vec3f centerCoord) {
 	double halfWidth = cubeWidth/2;
 
 	// TODO add support for specifying cube face colors
-	RGB3f color = {1.0, 1.0, 1.0};
+	//RGB3f color = {1.0, 1.0, 1.0};
+
+	// TODO cube face orientations aren't correct -- need to normalize them relative to cube's orientation
 
 	// FRONT
 	Vec3f ur = {centerCoord.x+halfWidth, centerCoord.y+halfWidth, centerCoord.z-halfWidth};
 	Vec3f ll = {centerCoord.x-halfWidth, centerCoord.y-halfWidth, centerCoord.z-halfWidth};
-	drawRectangle(ll, ur, color);
+	drawRectangle(ll, ur, cube.front.color);
 
 	// BACK
 	ur = (Vec3f){ .x = centerCoord.x+halfWidth, .y = centerCoord.y+halfWidth, .z = centerCoord.z+halfWidth};
 	ll = (Vec3f){ .x = centerCoord.x-halfWidth, .y = centerCoord.y-halfWidth, .z = centerCoord.z+halfWidth};
-	drawRectangle(ll, ur, color);
+	drawRectangle(ll, ur, cube.back.color);
 
 	// RIGHT
 	ur = (Vec3f){ .x = centerCoord.x+halfWidth, .y = centerCoord.y+halfWidth, .z = centerCoord.z+halfWidth };
 	ll = (Vec3f){ .x = centerCoord.x+halfWidth, .y = centerCoord.y-halfWidth, .z = centerCoord.z-halfWidth };
-	drawRectangle(ll, ur, color);
+	drawRectangle(ll, ur, cube.right.color);
 
 	// LEFT
 	ur = (Vec3f){ .x = centerCoord.x-halfWidth, .y = centerCoord.y+halfWidth, .z = centerCoord.z-halfWidth };
 	ll = (Vec3f){ .x = centerCoord.x-halfWidth, .y = centerCoord.y-halfWidth, .z = centerCoord.z+halfWidth };
-	drawRectangle(ll, ur, color);
+	drawRectangle(ll, ur, cube.left.color);
 
 	// TOP
 	ur = (Vec3f){ .x = centerCoord.x+halfWidth, .y = centerCoord.y+halfWidth, .z = centerCoord.z+halfWidth };
 	ll = (Vec3f){ .x = centerCoord.x-halfWidth, .y = centerCoord.y+halfWidth, .z = centerCoord.z-halfWidth };
-	drawRectangle(ll, ur, color);
+	drawRectangle(ll, ur, cube.top.color);
 
 	// BOTTOM
 	ur = (Vec3f){ .x = centerCoord.x+halfWidth, .y = centerCoord.y-halfWidth, .z = centerCoord.z+halfWidth };
 	ll = (Vec3f){ .x = centerCoord.x-halfWidth, .y = centerCoord.y-halfWidth, .z = centerCoord.z-halfWidth };
-	drawRectangle(ll, ur, color);
+	drawRectangle(ll, ur, cube.bottom.color);
 }
