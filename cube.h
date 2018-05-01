@@ -45,14 +45,6 @@ void initializeRubiks(Rubiks *rubiks);
 void rotateCubeFace(Rubiks *rubiks, int face, int direction);
 int findCube(Rubiks *rubiks, int cubePosition);
 
-
-Cube getNormalizedCube(Cube *cube) {
-	// drawing routine is expecting a cube that has the "correct" face values
-	// take a given cube and generate a new one, not rotated, with the proper face values
-	// ex, given a cube with a blue right face, rotated 90 deg about y axis
-	// generate a new cube with a blue front face
-}
-
 void rotateCubeFace(Rubiks *rubiks, int face, int direction) { // positive anything=cw, negative anything=ccw
 	// once I start modifying cubes, looking them up by their number won't work anymore...
 	// each rotation can be defined as 8 moves (or the reverse of that if ccw

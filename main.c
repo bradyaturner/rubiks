@@ -28,6 +28,7 @@ void drawCube(Cube cube, Vec3f centerCoord);
 void drawRectangle(Vec3f ll, Vec3f ur, RGB3f color);
 void specialKeys( int key, int x, int y );
 void keyboardHandler(unsigned char key, int x, int y);
+void resetDebugInfo();
 
 double rotate_y=0; 
 double rotate_x=0;
@@ -37,6 +38,7 @@ double cubeWidth = 0.3;
 int windowId;
 
 Rubiks rubiksCube;
+int printed = 0;
 
 void display(){
 
@@ -69,13 +71,36 @@ void drawRubiksCube(){
 	for(int x=-1; x<=1; x++){
 		for(int y=-1; y<=1; y++){
 			for(int z=-1; z<=1; z++){
-				Vec3f cubeCoord = {x*cubeWidth, y*cubeWidth, z*cubeWidth};
+				//Vec3f cubeCoord = {x*cubeWidth, y*cubeWidth, z*cubeWidth};
+				// TODO calculate cubeCoord based on cube.position, rubiks center coord, cubeWidth
+				Cube *cube = &rubiksCube.cubes[findCube(&rubiksCube, i)];
+				int position = cube->position + 1;
+				int yPos = (((position-1) / 9) - 1) * -1;
+				int xPos = (position % 3) == 0 ? 1 : (position%3)-2;
+				int zPos;
+				if ((position>=1 && position<=3) || (position>=10 && position<=12) || (position>=19 && position<=21)) {
+					zPos = -1;
+				} else if ((position>=4 && position<=6) || (position>=13 && position<=15) || (position>=22 && position<=24)) {
+					zPos = 0;
+				} else {
+					zPos = 1;
+				}
+				if (!printed) {
+					printf("Drawing cube %i with position [ %i, %i, %i ]\n", i, xPos, yPos, zPos);
+				}
+				Vec3f cubeCoord = {xPos*cubeWidth, yPos*cubeWidth, zPos*cubeWidth};
+
 				int cubeNum = findCube(&rubiksCube, i);
 				drawCube(rubiksCube.cubes[cubeNum], cubeCoord);
 				i++;
 			}
 		}
 	}
+	printed = 1;
+}
+
+void resetDebugInfo() {
+	printed = 0;
 }
 
 void specialKeys( int key, int x, int y ) {
@@ -100,6 +125,9 @@ void keyboardHandler(unsigned char key, int x, int y) {
 		case 113:
 			glutDestroyWindow(windowId); // should I check if this is initialized?
 			exit(0);
+			break;
+		case 112:
+			resetDebugInfo();
 			break;
 		case 49:
 			rotateCubeFace(&rubiksCube, 1, 1);
@@ -182,10 +210,10 @@ void drawRectangle(Vec3f ll, Vec3f ur, RGB3f color){
 void drawCube(Cube cube, Vec3f centerCoord) {
 	double halfWidth = cubeWidth/2;
 
-	// TODO add support for specifying cube face colors
-	//RGB3f color = {1.0, 1.0, 1.0};
-
-	// TODO cube face orientations aren't correct -- need to normalize them relative to cube's orientation
+	// Rotate to draw cube
+	glRotatef( cube.rotation.x, 1.0, 0.0, 0.0 );
+	glRotatef( cube.rotation.y, 0.0, 1.0, 0.0 );
+	glRotatef( cube.rotation.z, 0.0, 0.0, 1.0 );
 
 	// FRONT
 	Vec3f ur = {centerCoord.x+halfWidth, centerCoord.y+halfWidth, centerCoord.z-halfWidth};
@@ -216,4 +244,9 @@ void drawCube(Cube cube, Vec3f centerCoord) {
 	ur = (Vec3f){ .x = centerCoord.x+halfWidth, .y = centerCoord.y-halfWidth, .z = centerCoord.z+halfWidth };
 	ll = (Vec3f){ .x = centerCoord.x-halfWidth, .y = centerCoord.y-halfWidth, .z = centerCoord.z-halfWidth };
 	drawRectangle(ll, ur, cube.bottom.color);
+
+	// Return to original rotation
+	glRotatef( -1 * cube.rotation.x, 1.0, 0.0, 0.0 );
+	glRotatef( -1 * cube.rotation.y, 0.0, 1.0, 0.0 );
+	glRotatef( -1 * cube.rotation.z, 0.0, 0.0, 1.0 );
 }
