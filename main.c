@@ -24,11 +24,12 @@ typedef struct{
 void initialize();
 void display();
 void drawRubiksCube();
-void drawCube(Cube cube, Vec3f centerCoord);
+void drawCube(Cube cube, Vec3f origin);
 void drawRectangle(Vec3f ll, Vec3f ur, RGB3f color);
 void specialKeys( int key, int x, int y );
 void keyboardHandler(unsigned char key, int x, int y);
 void resetDebugInfo();
+void resetRotation();
 
 double rotate_y=0; 
 double rotate_x=0;
@@ -39,6 +40,7 @@ int windowId;
 
 Rubiks rubiksCube;
 int printed = 0;
+const Vec3i origin = {0, 0, 0};
 
 void display(){
 
@@ -48,16 +50,9 @@ void display(){
 	// Reset transformations
 	glLoadIdentity();
 
-	// Other Transformations
-	// glTranslatef( 0.1, 0.0, 0.0 );      // Not included
-	// glRotatef( 180, 0.0, 1.0, 0.0 );    // Not included
-
 	// Rotate when user changes rotate_x and rotate_y
 	glRotatef( rotate_x, 1.0, 0.0, 0.0 );
 	glRotatef( rotate_y, 0.0, 1.0, 0.0 );
-
-	// Other Transformations
-	// glScalef( 2.0, 2.0, 0.0 );          // Not included
 
 	drawRubiksCube();
 
@@ -67,40 +62,38 @@ void display(){
 
 void drawRubiksCube(){
 	// TODO there has to be a smarter way to do this math
-	int i = 0;
-	for(int x=-1; x<=1; x++){
-		for(int y=-1; y<=1; y++){
-			for(int z=-1; z<=1; z++){
-				//Vec3f cubeCoord = {x*cubeWidth, y*cubeWidth, z*cubeWidth};
-				// TODO calculate cubeCoord based on cube.position, rubiks center coord, cubeWidth
-				Cube *cube = &rubiksCube.cubes[findCube(&rubiksCube, i)];
-				int position = cube->position + 1;
-				int yPos = (((position-1) / 9) - 1) * -1;
-				int xPos = (position % 3) == 0 ? 1 : (position%3)-2;
-				int zPos;
-				if ((position>=1 && position<=3) || (position>=10 && position<=12) || (position>=19 && position<=21)) {
-					zPos = -1;
-				} else if ((position>=4 && position<=6) || (position>=13 && position<=15) || (position>=22 && position<=24)) {
-					zPos = 0;
-				} else {
-					zPos = 1;
-				}
-				if (!printed) {
-					printf("Drawing cube %i with position [ %i, %i, %i ]\n", i, xPos, yPos, zPos);
-				}
-				Vec3f cubeCoord = {xPos*cubeWidth, yPos*cubeWidth, zPos*cubeWidth};
-
-				int cubeNum = findCube(&rubiksCube, i);
-				drawCube(rubiksCube.cubes[cubeNum], cubeCoord);
-				i++;
-			}
+	for(int i=0; i<27; i++){
+		int index = findCube(&rubiksCube, i);
+		Cube *cube = &rubiksCube.cubes[index];
+		int position = cube->position + 1;
+		int yPos = (((position-1) / 9) - 1) * -1;
+		int xPos = (position % 3) == 0 ? 1 : (position%3)-2;
+		int zPos;
+		if ((position>=1 && position<=3) || (position>=10 && position<=12) || (position>=19 && position<=21)) {
+			zPos = -1;
+		} else if ((position>=4 && position<=6) || (position>=13 && position<=15) || (position>=22 && position<=24)) {
+			zPos = 0;
+		} else {
+			zPos = 1;
 		}
+		if (!printed) {
+			printf("Drawing cube %i at postition: %i, offset=[ %i, %i, %i ]\n", index, position-1, xPos, yPos, zPos);
+		}
+		Vec3f cubeCoord = {xPos*cubeWidth, yPos*cubeWidth, zPos*cubeWidth};
+
+		int cubeNum = findCube(&rubiksCube, i);
+		drawCube(rubiksCube.cubes[cubeNum], cubeCoord);
 	}
 	printed = 1;
 }
 
 void resetDebugInfo() {
 	printed = 0;
+	for (int i=0; i<27; i++) {
+		Cube* cube = &rubiksCube.cubes[i];
+		printf("Cube #%i at position: %i, rotation: (%i, %i, %i)\n",
+			i, cube->position, cube->rotation.x, cube->rotation.y, cube->rotation.z);
+	}
 }
 
 void specialKeys( int key, int x, int y ) {
@@ -136,6 +129,9 @@ void keyboardHandler(unsigned char key, int x, int y) {
 		case 35:
 			rotateCubeFace(&rubiksCube, 5, -1); // front layer cw
 			break;
+		case 48:
+			resetRotation();
+			break;
 		case 49:
 			rotateCubeFace(&rubiksCube, 1, 1); // top layer cw
 			break;
@@ -150,6 +146,11 @@ void keyboardHandler(unsigned char key, int x, int y) {
 			break;
 	}
 	glutPostRedisplay();
+}
+
+void resetRotation() {
+	rotate_x = 0;
+	rotate_y = 0;
 }
 
 void initialize() {
@@ -194,6 +195,7 @@ void drawSquare(Vec3f lr, Vec3f ur, Vec3f ul, Vec3f ll, RGB3f color) {
 }
 
 void drawRectangle(Vec3f ll, Vec3f ur, RGB3f color){
+	// TODO rewrite with the assumption we will use translate/rotate/scale functions to position and resize
 	Vec3f ul;
 	Vec3f lr;
 
@@ -226,43 +228,44 @@ void drawRectangle(Vec3f ll, Vec3f ur, RGB3f color){
 void drawCube(Cube cube, Vec3f centerCoord) {
 	double halfWidth = cubeWidth/2;
 
+	glPushMatrix();
+	glTranslatef(centerCoord.x, centerCoord.y, centerCoord.z);
+	// glScalef( 2.0, 2.0, 0.0 ); use this instead of adding/subtracting halfWidth
+
 	// Rotate to draw cube
 	glRotatef( cube.rotation.x, 1.0, 0.0, 0.0 );
 	glRotatef( cube.rotation.y, 0.0, 1.0, 0.0 );
 	glRotatef( cube.rotation.z, 0.0, 0.0, 1.0 );
 
 	// FRONT
-	Vec3f ur = {centerCoord.x+halfWidth, centerCoord.y+halfWidth, centerCoord.z-halfWidth};
-	Vec3f ll = {centerCoord.x-halfWidth, centerCoord.y-halfWidth, centerCoord.z-halfWidth};
+	Vec3f ur = {origin.x+halfWidth, origin.y+halfWidth, origin.z-halfWidth};
+	Vec3f ll = {origin.x-halfWidth, origin.y-halfWidth, origin.z-halfWidth};
 	drawRectangle(ll, ur, cube.front.color);
 
 	// BACK
-	ur = (Vec3f){ .x = centerCoord.x+halfWidth, .y = centerCoord.y+halfWidth, .z = centerCoord.z+halfWidth};
-	ll = (Vec3f){ .x = centerCoord.x-halfWidth, .y = centerCoord.y-halfWidth, .z = centerCoord.z+halfWidth};
+	ur = (Vec3f){ .x = origin.x+halfWidth, .y = origin.y+halfWidth, .z = origin.z+halfWidth};
+	ll = (Vec3f){ .x = origin.x-halfWidth, .y = origin.y-halfWidth, .z = origin.z+halfWidth};
 	drawRectangle(ll, ur, cube.back.color);
 
 	// RIGHT
-	ur = (Vec3f){ .x = centerCoord.x+halfWidth, .y = centerCoord.y+halfWidth, .z = centerCoord.z+halfWidth };
-	ll = (Vec3f){ .x = centerCoord.x+halfWidth, .y = centerCoord.y-halfWidth, .z = centerCoord.z-halfWidth };
+	ur = (Vec3f){ .x = origin.x+halfWidth, .y = origin.y+halfWidth, .z = origin.z+halfWidth };
+	ll = (Vec3f){ .x = origin.x+halfWidth, .y = origin.y-halfWidth, .z = origin.z-halfWidth };
 	drawRectangle(ll, ur, cube.right.color);
 
 	// LEFT
-	ur = (Vec3f){ .x = centerCoord.x-halfWidth, .y = centerCoord.y+halfWidth, .z = centerCoord.z-halfWidth };
-	ll = (Vec3f){ .x = centerCoord.x-halfWidth, .y = centerCoord.y-halfWidth, .z = centerCoord.z+halfWidth };
+	ur = (Vec3f){ .x = origin.x-halfWidth, .y = origin.y+halfWidth, .z = origin.z-halfWidth };
+	ll = (Vec3f){ .x = origin.x-halfWidth, .y = origin.y-halfWidth, .z = origin.z+halfWidth };
 	drawRectangle(ll, ur, cube.left.color);
 
 	// TOP
-	ur = (Vec3f){ .x = centerCoord.x+halfWidth, .y = centerCoord.y+halfWidth, .z = centerCoord.z+halfWidth };
-	ll = (Vec3f){ .x = centerCoord.x-halfWidth, .y = centerCoord.y+halfWidth, .z = centerCoord.z-halfWidth };
+	ur = (Vec3f){ .x = origin.x+halfWidth, .y = origin.y+halfWidth, .z = origin.z+halfWidth };
+	ll = (Vec3f){ .x = origin.x-halfWidth, .y = origin.y+halfWidth, .z = origin.z-halfWidth };
 	drawRectangle(ll, ur, cube.top.color);
 
 	// BOTTOM
-	ur = (Vec3f){ .x = centerCoord.x+halfWidth, .y = centerCoord.y-halfWidth, .z = centerCoord.z+halfWidth };
-	ll = (Vec3f){ .x = centerCoord.x-halfWidth, .y = centerCoord.y-halfWidth, .z = centerCoord.z-halfWidth };
+	ur = (Vec3f){ .x = origin.x+halfWidth, .y = origin.y-halfWidth, .z = origin.z+halfWidth };
+	ll = (Vec3f){ .x = origin.x-halfWidth, .y = origin.y-halfWidth, .z = origin.z-halfWidth };
 	drawRectangle(ll, ur, cube.bottom.color);
 
-	// Return to original rotation
-	glRotatef( -1 * cube.rotation.x, 1.0, 0.0, 0.0 );
-	glRotatef( -1 * cube.rotation.y, 0.0, 1.0, 0.0 );
-	glRotatef( -1 * cube.rotation.z, 0.0, 0.0, 1.0 );
+	glPopMatrix();
 }
