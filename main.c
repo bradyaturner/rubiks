@@ -118,6 +118,7 @@ void specialKeys( int key, int x, int y ) {
 }
 
 void keyboardHandler(unsigned char key, int x, int y) {
+	printf("Key pressed: %i\n", key);
 	switch (key)
 	{
 		case 27:
@@ -129,8 +130,23 @@ void keyboardHandler(unsigned char key, int x, int y) {
 		case 112:
 			resetDebugInfo();
 			break;
+		case 33:
+			rotateCubeFace(&rubiksCube, 1, -1); // top layer ccw
+			break;
+		case 35:
+			rotateCubeFace(&rubiksCube, 5, -1); // front layer cw
+			break;
 		case 49:
-			rotateCubeFace(&rubiksCube, 1, 1);
+			rotateCubeFace(&rubiksCube, 1, 1); // top layer cw
+			break;
+		case 50:
+			rotateCubeFace(&rubiksCube, 2, 1); // bottom layer cw
+			break;
+		case 51:
+			rotateCubeFace(&rubiksCube, 5, 1); // front layer cw
+			break;
+		case 64:
+			rotateCubeFace(&rubiksCube, 2, -1); // bottom layer ccw
 			break;
 	}
 	glutPostRedisplay();
