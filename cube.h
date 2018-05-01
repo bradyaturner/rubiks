@@ -39,18 +39,18 @@ typedef struct {
 
 const int topLayer[9]			= {0, 1, 2, 3, 4, 5, 6, 7, 8};
 const int topLayerRotation[9]	= {2, 5, 8, 1, 4, 7, 0, 3, 6}; // to rotate ccw flip layer and rotation values
-const Vec3i topLayerCWDegrees = (Vec3i){0, 90, 0};
-const Vec3i topLayerCCWDegrees = (Vec3i){0, -90, 0};
+const Vec3i topLayerCWDegrees = {0, 90, 0};
+const Vec3i topLayerCCWDegrees = {0, -90, 0};
 
 const int bottomLayer[9]			= {18, 19, 20, 21, 22, 23, 24, 25, 26};
 const int bottomLayerRotation[9]	= {24, 21, 18, 25, 22, 19, 26, 23, 20};
-const Vec3i bottomLayerCWDegrees = (Vec3i){0, -90, 0};
-const Vec3i bottomLayerCCWDegrees = (Vec3i){0, 90, 0};
+const Vec3i bottomLayerCWDegrees = {0, -90, 0};
+const Vec3i bottomLayerCCWDegrees = {0, 90, 0};
 
 const int frontLayer[9]			= {6, 7, 8, 15, 16, 17, 24, 25, 26};
 const int frontLayerRotation[9]	= {8, 17, 26, 7, 16, 25, 6, 15, 24};
-const Vec3i frontLayerCWDegrees = (Vec3i){0, 0, 90};
-const Vec3i frontLayerCCWDegrees = (Vec3i){0, 0, -90};
+const Vec3i frontLayerCWDegrees = {0, 0, 90};
+const Vec3i frontLayerCCWDegrees = {0, 0, -90};
 
 void initializeRubiks(Rubiks *rubiks);
 void rotateCubeFace(Rubiks *rubiks, int face, int direction);

@@ -1,7 +1,7 @@
 LIBS = -lGL -lglut -lm
 
 CC=gcc
-CFLAGS= -g -Wall 
+CFLAGS= -g -Wall -std=c99
 
 APP= rubiks
  
