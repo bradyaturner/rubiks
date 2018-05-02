@@ -8,13 +8,9 @@
 #include <GL/glut.h>
 #endif
 
+#include "rubiks.h"
 #include "cube.h"
-
-typedef struct {
-	float x;
-	float y;
-	float z;
-} Vec3f;
+#include "vector.h"
 
 typedef struct{
     Vec3f ll;
