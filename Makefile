@@ -10,6 +10,12 @@ all: $(APP)
 $(APP): main.o rubiks.o cube.o vector.o utils.o
 	$(CC) $(CFLAGS) -o $@ main.o rubiks.o cube.o vector.o utils.o $(LIBS)
 
+test:	test.o singlecube.o cube.o vector.o utils.o
+	$(CC) $(CFLAGS) -o $@ test.o singlecube.o cube.o vector.o utils.o $(LIBS)
+
+singlecube.o:	singlecube.c cube.h vector.h
+	$(CC) $(CFLAGS) -c singlecube.c
+
 rubiks.o:	rubiks.c cube.h vector.h utils.h
 	$(CC) $(CFLAGS) -c rubiks.c
 
@@ -23,5 +29,5 @@ utils.o:	utils.c utils.h
 	$(CC) $(CFLAGS) -c utils.c
 
 clean:
-	rm -f $(APP)
+	rm -f $(APP) test
 	rm -f *.o
