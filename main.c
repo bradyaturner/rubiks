@@ -129,6 +129,12 @@ void keyboardHandler(unsigned char key, int x, int y) {
 		case 35:
 			rotateCubeFace(&rubiksCube, 5, -1); // front layer cw
 			break;
+		case 36:
+			rotateCubeFace(&rubiksCube, 6, -1); // SHIFT-4 back layer ccw
+			break;
+		case 37:
+			rotateCubeFace(&rubiksCube, 4, -1); // SHIFT-5 right layer ccw
+			break;
 		case 48:
 			resetRotation();
 			break;
@@ -141,8 +147,20 @@ void keyboardHandler(unsigned char key, int x, int y) {
 		case 51:
 			rotateCubeFace(&rubiksCube, 5, 1); // front layer cw
 			break;
+		case 52:
+			rotateCubeFace(&rubiksCube, 6, 1); // 4 back layer cw
+			break;
+		case 53:
+			rotateCubeFace(&rubiksCube, 4, 1); // 5 right layer cw
+			break;
+		case 54:
+			rotateCubeFace(&rubiksCube, 3, 1); // 6 left layer cw
+			break;
 		case 64:
 			rotateCubeFace(&rubiksCube, 2, -1); // bottom layer ccw
+			break;
+		case 94:
+			rotateCubeFace(&rubiksCube, 3, -1); // SHIFT-6 left layer ccw
 			break;
 	}
 	glutPostRedisplay();

@@ -18,6 +18,14 @@ Vec3i vectorAdd(Vec3i n1, Vec3i n2) {
 	return tmp;
 }
 
+Vec3i vectorMultiply(Vec3i n1, int c) {
+	Vec3i tmp;
+	tmp.x = n1.x * c;
+	tmp.y = n1.y * c;
+	tmp.z = n1.z * c;
+	return tmp;
+}
+
 typedef struct {
 	RGB3f color;
 } CubeFace;
@@ -37,87 +45,124 @@ typedef struct {
 	Cube cubes[27];
 } Rubiks;
 
-const int topLayer[9]			= {0, 1, 2, 3, 4, 5, 6, 7, 8};
-const int topLayerRotation[9]	= {2, 5, 8, 1, 4, 7, 0, 3, 6}; // to rotate ccw flip layer and rotation values
-const Vec3i topLayerCWDegrees = {0, 90, 0};
-const Vec3i topLayerCCWDegrees = {0, -90, 0};
+const int rotation[9] = {2, 5, 8, 1, 4, 7, 0, 3, 6}; // to rotate ccw flip layer and rotation values
 
-const int bottomLayer[9]			= {18, 19, 20, 21, 22, 23, 24, 25, 26};
-const int bottomLayerRotation[9]	= {24, 21, 18, 25, 22, 19, 26, 23, 20};
-const Vec3i bottomLayerCWDegrees = {0, -90, 0};
-const Vec3i bottomLayerCCWDegrees = {0, 90, 0};
+const int topLayer[9] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+const Vec3i topLayerDegrees = {0, 90, 0};
 
-const int frontLayer[9]			= {6, 7, 8, 15, 16, 17, 24, 25, 26};
-const int frontLayerRotation[9]	= {8, 17, 26, 7, 16, 25, 6, 15, 24};
-const Vec3i frontLayerCWDegrees = {0, 0, 90};
-const Vec3i frontLayerCCWDegrees = {0, 0, -90};
+const int bottomLayer[9] = {24, 25, 26, 21, 22, 23, 18, 19, 20};
+const Vec3i bottomLayerDegrees = {0, -90, 0};
+
+const int frontLayer[9] = {6, 7, 8, 15, 16, 17, 24, 25, 26};
+const Vec3i frontLayerDegrees = {0, 0, 90};
+
+const int backLayer[9] = {2, 1, 0, 11, 10, 9, 20, 19, 18};
+const Vec3i backLayerDegrees = {0, 0, -90};
+
+const int rightLayer[9] = {8, 5, 2, 17, 14, 11, 26, 23, 20};
+const Vec3i rightLayerDegrees = {90, 0, 0};
+
+const int leftLayer[9] = {0, 3, 6, 9, 12, 15, 18, 21, 24};
+const Vec3i leftLayerDegrees = {-90, 0, 0};
 
 void initializeRubiks(Rubiks *rubiks);
 void rotateCubeFace(Rubiks *rubiks, int face, int direction);
 int findCube(Rubiks *rubiks, int cubePosition);
-void rotateLayer(Rubiks *rubiks, const int layer[], const int rotation[], const Vec3i degrees);
+void rotateCube(Cube *cube, const Vec3i degrees);
+void rotateLayer(Rubiks *rubiks, const int layer[], const Vec3i degrees, int direction);
+void translateLayer(Rubiks *rubiks, int layer[], int translation[]);
+int indexOf(const int arr[], const int size, const int element);
 
-void rotateLayer(Rubiks *rubiks, const int layer[], const int rotation[], const Vec3i degrees) {
-	// get index of cubes actually occupying top layer positions
-	// should end up with 9 values
-	// for each one, update its position to be its rotation value
+// TODO is this necessary? is passing size required?
+int indexOf(const int arr[], const int size, const int element) {
+	int index = -1;
+	for (int i=0; i<size; i++) {
+		if (arr[i] == element) {
+			index = i;
+			break;
+		}
+	}
+	return index;
+}
+
+void rotateLayer(Rubiks *rubiks, const int layer[], const Vec3i degrees, int direction) {
 	int indices[9];
 	for (int i=0; i<9; i++) {
 		printf("Looking for cube at position = %i", layer[i]);
 		indices[i] = findCube(rubiks, layer[i]);
 		printf("\tFound cube index: %i\n", indices[i]);
 	}
+	int newPositions[9];
 	for (int i=0; i<9; i++) {
-		printf("Rotating cube at postition %i to position %i\n",
+		printf("Determining new position for cube at position %i == layer[%i]=%i\n",
 			rubiks->cubes[indices[i]].position,
-			rotation[i]
-		);
-		rubiks->cubes[indices[i]].position = rotation[i];
-		Vec3i curRotation = rubiks->cubes[indices[i]].rotation;
-		printf("Cube rotation before: %i, %i, %i...", curRotation.x, curRotation.y, curRotation.z);
-		rubiks->cubes[indices[i]].rotation = vectorAdd(rubiks->cubes[indices[i]].rotation, degrees);
-		rubiks->cubes[indices[i]].rotation.x = rubiks->cubes[indices[i]].rotation.x % 360;
-		rubiks->cubes[indices[i]].rotation.y = rubiks->cubes[indices[i]].rotation.y % 360;
-		rubiks->cubes[indices[i]].rotation.z = rubiks->cubes[indices[i]].rotation.z % 360;
-		Vec3i curRotation2 = rubiks->cubes[indices[i]].rotation;
-		printf("Cube rotation after: %i, %i, %i\n", curRotation2.x, curRotation2.y, curRotation2.z);
+			i, layer[i]);
+
+			int index = indexOf(rotation, 9, i); // the cube in this face position gets rotated to this new face position
+			newPositions[i] = layer[index]; // the new position is the cube at that index in the layer (layer values ARE positions)
+	}
+
+	Vec3i deg = degrees;
+	if (direction >=0) {
+		translateLayer(rubiks, layer, newPositions);
+	} else {
+		translateLayer(rubiks, newPositions, layer);
+		deg = vectorMultiply(deg, -1);
+	}
+	for (int i=0; i<9; i++) {
+		rotateCube(&rubiks->cubes[indices[i]], deg);
 	}
 }
 
+void translateLayer(Rubiks *rubiks, int layer[], int translation[]) {
+	for (int i=0; i<9; i++) {
+		int index = findCube(rubiks, layer[i]);
+		printf("Rotating cube at position %i to position %i\n",
+			rubiks->cubes[index].position,
+			translation[i]
+		);
+		rubiks->cubes[index].position = translation[i];
+	}
+}
+
+void rotateCube(Cube *cube, const Vec3i degrees) {
+	printf("Cube rotation before: %i, %i, %i...", cube->rotation.x, cube->rotation.y, cube->rotation.z);
+	cube->rotation = vectorAdd(cube->rotation, degrees);
+	cube->rotation.x = cube->rotation.x % 360;
+	cube->rotation.y = cube->rotation.y % 360;
+	cube->rotation.z = cube->rotation.z % 360;
+	printf("Cube rotation after: %i, %i, %i\n", cube->rotation.x, cube->rotation.y, cube->rotation.z);
+}
+
 void rotateCubeFace(Rubiks *rubiks, int face, int direction) { // positive anything=cw, negative anything=ccw
-	// once I start modifying cubes, looking them up by their number won't work anymore...
-	// each rotation can be defined as 8 moves (or the reverse of that if ccw
-	// can define a single method that takes those 8 moves and looks up 8 indices and calculates new positions
-	// CONVENTION: looking from positive to negative end of axis and rotating cw gives you +deg rotation
-	// so rotating the top layer clockwise is +deg, but rotating the bottom layer clockwise is -deg
 	switch(face)
 	{
 		case 1: // top -- rotation about y axis (cw is +deg)
 		{
-			if (direction >= 0) {
-				rotateLayer(rubiks, topLayer, topLayerRotation, topLayerCWDegrees);
-			} else {
-				rotateLayer(rubiks, topLayerRotation, topLayer, topLayerCCWDegrees);
-			}
+			printf("Rotating top layer %sclockwise\n", direction>=0 ? "" : "counter");
+			rotateLayer(rubiks, topLayer, topLayerDegrees, direction);
 			break;
 		}
 		case 2: // bottom -- rotation about y axis
-			if (direction >= 0) {
-				rotateLayer(rubiks, bottomLayer, bottomLayerRotation, bottomLayerCWDegrees);
-			} else {
-				rotateLayer(rubiks, bottomLayerRotation, bottomLayer, bottomLayerCCWDegrees);
-			}
+			printf("Rotating bottom layer %sclockwise\n", direction>=0 ? "" : "counter");
+			rotateLayer(rubiks, bottomLayer, bottomLayerDegrees, direction);
 			break;
 		case 3: // left -- rotation about x axis
+			printf("Rotating left layer %sclockwise\n", direction>=0 ? "" : "counter");
+			rotateLayer(rubiks, leftLayer, leftLayerDegrees, direction);
+			break;
 		case 4: // right -- rotation about x axis
+			printf("Rotating right layer %sclockwise\n", direction>=0 ? "" : "counter");
+			rotateLayer(rubiks, rightLayer, rightLayerDegrees, direction);
+			break;
 		case 5: // front
-			if (direction >= 0) {
-				rotateLayer(rubiks, frontLayer, frontLayerRotation, frontLayerCWDegrees);
-			} else {
-				rotateLayer(rubiks, frontLayerRotation, frontLayer, frontLayerCCWDegrees);
-			}
+			printf("Rotating front layer %sclockwise\n", direction>=0 ? "" : "counter");
+			rotateLayer(rubiks, frontLayer, frontLayerDegrees, direction);
 			break;
 		case 6: // back
+			printf("Rotating back layer %sclockwise\n", direction>=0 ? "" : "counter");
+			rotateLayer(rubiks, backLayer, backLayerDegrees, direction);
+			break;
 		default:
 			break;
 	}
