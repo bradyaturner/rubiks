@@ -10,8 +10,13 @@ This project is an OpenGL Rubik's Cube visualizer and solver written in C.
 ## How to use
 
 ### Setup
+## Linux
 ```bash
-sudo apt-get install freeglut3-dev
+sudo apt-get install libglfw3-dev
+```
+## macOS
+```bash
+brew install glfw3
 ```
 
 ### Build

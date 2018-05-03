@@ -2,12 +2,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <math.h>
-#define GL_GLEXT_PROTOTYPES
-#ifdef __APPLE__
-#include <GLUT/glut.h>
-#else
-#include <GL/glut.h>
-#endif
+#include <GLFW/glfw3.h>
 
 #include "singlecube.h"
 #include "cube.h"
@@ -23,7 +18,7 @@ void display();
 void drawCube();
 void drawRectangle(Vec3f ll, Vec3f ur, RGB3f color);
 void specialKeys( int key, int x, int y );
-void keyboardHandler(unsigned char key, int x, int y);
+void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods);
 void resetDebugInfo();
 void resetRotation();
 
@@ -32,7 +27,7 @@ double rotate_x=0;
 
 double cubeWidth = 0.3;
 
-int windowId;
+GLFWwindow *window;
 
 Cube myCube;
 int printed = 0;
@@ -53,7 +48,6 @@ void display(){
 	drawCube();
 
 	glFlush();
-	glutSwapBuffers();
 }
 
 void resetDebugInfo() {
@@ -63,74 +57,94 @@ void resetDebugInfo() {
 	);
 }
 
-void specialKeys( int key, int x, int y ) {
-	if (key == GLUT_KEY_RIGHT) {
-		rotate_y += 5;
-	} else if (key == GLUT_KEY_LEFT) {
-		rotate_y -= 5;
-	} else if (key == GLUT_KEY_UP) {
-		rotate_x += 5;
-	} else if (key == GLUT_KEY_DOWN) {
-		rotate_x -= 5;
+void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	if (action != GLFW_PRESS && action != GLFW_REPEAT) {
+		return;
 	}
 
-	glutPostRedisplay();
-}
-
-void keyboardHandler(unsigned char key, int x, int y) {
 	printf("Key pressed: %i\n", key);
 	switch (key)
 	{
 		case 27:
 		case 81:
 		case 113:
-			glutDestroyWindow(windowId); // should I check if this is initialized?
-			exit(0);
+			glfwSetWindowShouldClose(window, 1);
 			break;
 		case 112:
 			resetDebugInfo();
 			break;
 		case 33:
-			rotateF(&myCube, 1, -1); // top layer ccw
-			break;
-		case 35:
-			rotateF(&myCube, 5, -1); // front layer cw
-			break;
-		case 36:
-			rotateF(&myCube, 6, -1); // SHIFT-4 back layer ccw
-			break;
-		case 37:
-			rotateF(&myCube, 4, -1); // SHIFT-5 right layer ccw
 			break;
 		case 48:
 			resetRotation();
 			break;
-		case 49:
-			rotateF(&myCube, 1, 1); // top layer cw
+		case GLFW_KEY_1:
+			if ( action == GLFW_PRESS) {
+				if (mods == 0) {
+					rotateF(&myCube, 1, 1); // top layer cw
+				} else if (mods == GLFW_MOD_SHIFT) {
+					rotateF(&myCube, 1, -1); // top layer ccw
+				}
+			}
 			break;
-		case 50:
-			rotateF(&myCube, 2, 1); // bottom layer cw
+		case GLFW_KEY_2:
+			if ( action == GLFW_PRESS) {
+				if (mods == 0) {
+					rotateF(&myCube, 2, 1); // bottom layer cw
+				} else if (mods == GLFW_MOD_SHIFT) {
+					rotateF(&myCube, 2, -1); // bottom layer ccw
+				}
+			}
 			break;
-		case 51:
-			rotateF(&myCube, 5, 1); // front layer cw
+		case GLFW_KEY_3:
+			if ( action == GLFW_PRESS) {
+				if (mods == 0) {
+					rotateF(&myCube, 5, 1); // front layer cw
+				} else if (mods == GLFW_MOD_SHIFT) {
+					rotateF(&myCube, 5, -1); // front layer ccw
+				}
+			}
 			break;
-		case 52:
-			rotateF(&myCube, 6, 1); // 4 back layer cw
+		case GLFW_KEY_4:
+			if ( action == GLFW_PRESS) {
+				if (mods == 0) {
+					rotateF(&myCube, 6, 1); // 4 back layer cw
+				} else if (mods == GLFW_MOD_SHIFT) {
+					rotateF(&myCube, 6, -1); // 4 back layer ccw
+				}
+			}
 			break;
-		case 53:
-			rotateF(&myCube, 4, 1); // 5 right layer cw
+		case GLFW_KEY_5:
+			if ( action == GLFW_PRESS) {
+				if (mods == 0) {
+					rotateF(&myCube, 4, 1); // 5 right layer cw
+				} else if (mods == GLFW_MOD_SHIFT) {
+					rotateF(&myCube, 4, -1); // 5 right layer ccw
+				}
+			}
 			break;
-		case 54:
-			rotateF(&myCube, 3, 1); // 6 left layer cw
+		case GLFW_KEY_6:
+			if ( action == GLFW_PRESS) {
+				if (mods == 0) {
+					rotateF(&myCube, 3, 1); // 6 left layer cw
+				} else if (mods == GLFW_MOD_SHIFT) {
+					rotateF(&myCube, 3, -1); // 6 left layer ccw
+				}
+			}
 			break;
-		case 64:
-			rotateF(&myCube, 2, -1); // bottom layer ccw
+		case GLFW_KEY_RIGHT:
+			rotate_y += 5;
 			break;
-		case 94:
-			rotateF(&myCube, 3, -1); // SHIFT-6 left layer ccw
+		case GLFW_KEY_LEFT:
+			rotate_y -= 5;
+			break;
+		case GLFW_KEY_UP:
+			rotate_x += 5;
+			break;
+		case GLFW_KEY_DOWN:
+			rotate_x -= 5;
 			break;
 	}
-	glutPostRedisplay();
 }
 
 void resetRotation() {
@@ -144,18 +158,34 @@ void initialize() {
 
 int main( int argc, char* argv[] ){
 	initialize();
-	glutInit(&argc,argv);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-	windowId = glutCreateWindow("Rubik's Cube");
+	if (!glfwInit()) {
+		exit(EXIT_FAILURE);
+	}
+
+	//glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	window = glfwCreateWindow(640, 480, "Rubik's Cube", NULL, NULL);
+	if (!window) {
+		printf("Problem creating window!\n");
+		exit(1);
+	}
+	glfwMakeContextCurrent(window);
+	glfwSwapInterval(1);
+
 	glEnable(GL_DEPTH_TEST);
-	glutDisplayFunc(display);
-	glutSpecialFunc(specialKeys);
-	glutKeyboardFunc(keyboardHandler);
+	glfwSetKeyCallback(window, keyboardHandler);
 	glClearColor(0.3, 0.3, 0.3, 0.0);
 
-	glutMainLoop();
-
-	return 0;
+    while (!glfwWindowShouldClose(window))
+    {
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+		display();
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    exit(EXIT_SUCCESS);
 }
 
 void drawSquare(Vec3f lr, Vec3f ur, Vec3f ul, Vec3f ll, RGB3f color) {

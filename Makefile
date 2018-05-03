@@ -3,12 +3,10 @@ CFLAGS= -g -Wall -std=c99
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
-  LIBS = -lGL -lglut -lm
+	LIBS = -lGL -lglfw -lm
 endif
 ifeq ($(UNAME_S),Darwin) # macOS
-  FRAMEWORK = -framework GLUT
-  FRAMEWORK += -framework OpenGL
-  CFLAGS += -Wno-deprecated-declarations # GLUT is depreciated in OSX >= 10.9, replace with glfw
+	FRAMEWORK = -framework OpenGL -I/usr/local/include -lglfw
 endif
 
 APP= rubiks
