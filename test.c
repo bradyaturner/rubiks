@@ -23,6 +23,9 @@ void resetDebugInfo();
 void resetCameraRotation();
 void drawAxisLines();
 
+void drawCube2(Cube *cube, Vec3f coords);
+void drawNormalCube(Cube *cube, int useColor);
+
 double rotate_y=0; 
 double rotate_x=0;
 
@@ -47,7 +50,10 @@ void display(){
 	glRotatef( rotate_x, 1.0, 0.0, 0.0 );
 	glRotatef( rotate_y, 0.0, 1.0, 0.0 );
 
-	drawCube();
+	//drawCube();
+	Vec3f pos = {0.0,0.0,0.0};
+	drawCube2(&myCube, pos);
+
 	drawAxisLines();
 	cubeDebugInfo = 0;
 	glFlush();
@@ -229,6 +235,95 @@ void drawSquare(Vec3f lr, Vec3f ur, Vec3f ul, Vec3f ll, RGB3f color) {
 	glVertex3f(ur.x, ur.y, ur.z);
 	glVertex3f(ul.x, ul.y, ul.z);
 	glVertex3f(ll.x, ll.y, ll.z);
+	glEnd();
+}
+
+//void drawCube2(Vec3f coords, Vec3f normal, int rotation) {
+void drawCube2(Cube *cube, Vec3f coords) {
+	glPushMatrix();
+	if (cubeDebugInfo) {
+		printf("Drawing cube 0 with rotation: {%i, %i, %i}",
+			cube->rotation.x,
+			cube->rotation.y,
+			cube->rotation.z
+		);
+	}
+	glTranslatef(coords.x, coords.y, coords.z);
+	// glScalef( 2.0, 2.0, 0.0 ); use this instead of adding/subtracting halfWidth
+
+	// Rotate to draw cube
+	glRotatef( cube->rotation.x, 1.0, 0.0, 0.0 );
+	glRotatef( cube->rotation.y, 0.0, 1.0, 0.0 );
+	glRotatef( cube->rotation.z, 0.0, 0.0, 1.0 );
+
+	glEnable(GL_POLYGON_OFFSET_LINE);
+	glPolygonOffset(-1,-1);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glLineWidth((GLfloat)8);
+	glColor3f(0.2, 0.2, 0.2); // line color
+	drawNormalCube(cube, 0);
+	glDisable(GL_POLYGON_OFFSET_LINE);
+	glEnable(GL_POLYGON_OFFSET_FILL);
+	glPolygonOffset(1,1);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glColor3f(1.0, 1.0, 1.0); // fill color
+	drawNormalCube(cube, 1);
+	glDisable(GL_POLYGON_OFFSET_FILL);
+
+	glPopMatrix();
+}
+
+// draws a 1x1x1 cube centered about the origin with no rotation
+void drawNormalCube(Cube *cube, int useColor) {
+	glBegin(GL_QUADS);
+
+	// top
+	if (useColor)
+		glColor3f(cube->top.color.red, cube->top.color.green, cube->top.color.blue);
+	glVertex3f(0.5, 0.5, 0.5);
+	glVertex3f(-0.5, 0.5, 0.5);
+	glVertex3f(-0.5, 0.5, -0.5);
+	glVertex3f(0.5, 0.5, -0.5);
+
+	// bottom
+	if (useColor)
+		glColor3f(cube->bottom.color.red, cube->bottom.color.green, cube->bottom.color.blue);
+	glVertex3f(0.5, -0.5, 0.5);
+	glVertex3f(-0.5, -0.5, 0.5);
+	glVertex3f(-0.5, -0.5, -0.5);
+	glVertex3f(0.5, -0.5, -0.5);
+
+	// left
+	if (useColor)
+		glColor3f(cube->left.color.red, cube->left.color.green, cube->left.color.blue);
+	glVertex3f(-0.5, 0.5, 0.5);
+	glVertex3f(-0.5, -0.5, 0.5);
+	glVertex3f(-0.5, -0.5, -0.5);
+	glVertex3f(-0.5, 0.5, -0.5);
+
+	// right
+	if (useColor)
+		glColor3f(cube->right.color.red, cube->right.color.green, cube->right.color.blue);
+	glVertex3f(0.5, 0.5, 0.5);
+	glVertex3f(0.5, -0.5, 0.5);
+	glVertex3f(0.5, -0.5, -0.5);
+	glVertex3f(0.5, 0.5, -0.5);
+
+	// front
+	if (useColor)
+		glColor3f(cube->front.color.red, cube->front.color.green, cube->front.color.blue);
+	glVertex3f(0.5, 0.5, -0.5);
+	glVertex3f(0.5, -0.5, -0.5);
+	glVertex3f(-0.5, -0.5, -0.5);
+	glVertex3f(-0.5, 0.5, -0.5);
+
+	// back
+	if (useColor)
+		glColor3f(cube->back.color.red, cube->back.color.green, cube->back.color.blue);
+	glVertex3f(0.5, 0.5, 0.5);
+	glVertex3f(0.5, -0.5, 0.5);
+	glVertex3f(-0.5, -0.5, 0.5);
+	glVertex3f(-0.5, 0.5, 0.5);
 	glEnd();
 }
 
