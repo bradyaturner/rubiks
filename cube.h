@@ -20,5 +20,6 @@ typedef struct {
 } Cube;
 
 void rotateCube(Cube *cube, const Vec3i degrees);
+void resetRotation(Cube *cube);
 
 #endif

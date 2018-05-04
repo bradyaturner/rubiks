@@ -10,3 +10,8 @@ void rotateCube(Cube *cube, const Vec3i degrees) {
 	printf("Cube rotation after: %i, %i, %i\n", cube->rotation.x, cube->rotation.y, cube->rotation.z);
 }
 
+void resetRotation(Cube *cube) {
+	cube->rotation.x = 0;
+	cube->rotation.y = 0;
+	cube->rotation.z = 0;
+}

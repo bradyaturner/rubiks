@@ -20,13 +20,13 @@ void drawRectangle(Vec3f ll, Vec3f ur, RGB3f color);
 void specialKeys( int key, int x, int y );
 void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods);
 void resetDebugInfo();
-void resetRotation();
+void resetCameraRotation();
 void drawAxisLines();
 
 double rotate_y=0; 
 double rotate_x=0;
 
-double cubeWidth = 0.3;
+double cubeWidth = 0.7;
 
 GLFWwindow *window;
 
@@ -83,6 +83,9 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		return;
 	}
 
+	Vec3i ydeg = {5,0,0};
+	Vec3i xdeg = {0,5,0};
+	Vec3i zdeg = {0,0,5};
 	printf("Key pressed: %i\n", key);
 	switch (key)
 	{
@@ -94,10 +97,20 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		case GLFW_KEY_P:
 			resetDebugInfo();
 			break;
-		case 33:
+		case GLFW_KEY_R:
+			rotateCube(&myCube, ydeg);
+			break;
+		case GLFW_KEY_T:
+			rotateCube(&myCube, xdeg);
+			break;
+		case GLFW_KEY_Y:
+			rotateCube(&myCube, zdeg);
+			break;
+		case GLFW_KEY_DELETE:
+			resetRotation(&myCube);
 			break;
 		case 48:
-			resetRotation();
+			resetCameraRotation();
 			break;
 		case GLFW_KEY_1:
 			if ( action == GLFW_PRESS) {
@@ -168,7 +181,7 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 	}
 }
 
-void resetRotation() {
+void resetCameraRotation() {
 	rotate_x = 0;
 	rotate_y = 0;
 }
@@ -194,7 +207,7 @@ int main( int argc, char* argv[] ){
 
 	glEnable(GL_DEPTH_TEST);
 	glfwSetKeyCallback(window, keyboardHandler);
-	glClearColor(0.3, 0.3, 0.3, 0.0);
+	glClearColor(0.85, 0.85, 0.85, 0.0);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -210,19 +223,8 @@ int main( int argc, char* argv[] ){
 }
 
 void drawSquare(Vec3f lr, Vec3f ur, Vec3f ul, Vec3f ll, RGB3f color) {
-	glBegin(GL_POLYGON);
+	glBegin(GL_QUADS);
 	glColor3f(color.red, color.green, color.blue);
-	glVertex3f(lr.x, lr.y, lr.z);
-	glVertex3f(ur.x, ur.y, ur.z);
-	glVertex3f(ul.x, ul.y, ul.z);
-	glVertex3f(ll.x, ll.y, ll.z);
-	glEnd();
-
-	// Black outline for square
-	// TODO this is broken on one corner (yellow-red/front-bottom edge)
-	glLineWidth((GLfloat)5);
-	glBegin(GL_LINE_STRIP);
-	glColor3f(0.0, 0.0, 0.0);
 	glVertex3f(lr.x, lr.y, lr.z);
 	glVertex3f(ur.x, ur.y, ur.z);
 	glVertex3f(ul.x, ul.y, ul.z);
@@ -258,7 +260,18 @@ void drawRectangle(Vec3f ll, Vec3f ur, RGB3f color){
 		lr.y = ll.y; // all y equal
 	}
 
+	RGB3f lineColor = {0.2, 0.2, 0.2};
+	glEnable(GL_POLYGON_OFFSET_LINE);
+	glPolygonOffset(-1,-1);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glLineWidth((GLfloat)8);
+	drawSquare(lr, ur, ul, ll, lineColor);
+	glDisable(GL_POLYGON_OFFSET_LINE);
+	glEnable(GL_POLYGON_OFFSET_FILL);
+	glPolygonOffset(1,1);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	drawSquare(lr, ur, ul, ll, color);
+	glDisable(GL_POLYGON_OFFSET_FILL);
 }
 
 void drawCube() {
