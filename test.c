@@ -21,6 +21,7 @@ void specialKeys( int key, int x, int y );
 void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods);
 void resetDebugInfo();
 void resetRotation();
+void drawAxisLines();
 
 double rotate_y=0; 
 double rotate_x=0;
@@ -31,6 +32,7 @@ GLFWwindow *window;
 
 Cube myCube;
 int printed = 0;
+int cubeDebugInfo = 0;
 const Vec3i origin = {0, 0, 0};
 
 void display(){
@@ -46,12 +48,31 @@ void display(){
 	glRotatef( rotate_y, 0.0, 1.0, 0.0 );
 
 	drawCube();
-
+	drawAxisLines();
+	cubeDebugInfo = 0;
 	glFlush();
+}
+
+void drawAxisLines() {
+	glBegin(GL_LINES);
+	// x axis is RED
+	glColor3f(1.0, 0.0, 0.0);
+	glVertex3f(0.0, 0.0, 0.0);
+	glVertex3f(10.0, 0.0, 0.0);
+	// y axis is GREEN
+	glColor3f(0.0, 1.0, 0.0);
+	glVertex3f(0.0, 0.0, 0.0);
+	glVertex3f(0.0, 10.0, 0.0);
+	// z axis is BLUE
+	glColor3f(0.0, 0.0, 1.0);
+	glVertex3f(0.0, 0.0, 0.0);
+	glVertex3f(0.0, 0.0, 10.0);
+	glEnd();
 }
 
 void resetDebugInfo() {
 	printed = 0;
+	cubeDebugInfo = 0;
 	printf("Cube at position: %i, rotation: (%i, %i, %i)\n",
 		myCube.position, myCube.rotation.x, myCube.rotation.y, myCube.rotation.z
 	);
@@ -70,7 +91,7 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		case 113:
 			glfwSetWindowShouldClose(window, 1);
 			break;
-		case 112:
+		case GLFW_KEY_P:
 			resetDebugInfo();
 			break;
 		case 33:
@@ -243,6 +264,13 @@ void drawRectangle(Vec3f ll, Vec3f ur, RGB3f color){
 void drawCube() {
 	Vec3f centerCoord = {0,0,0};
 	double halfWidth = cubeWidth/2;
+	if (myCube.position == 0 && cubeDebugInfo) {
+		printf("Drawing cube 0 with rotation: {%i, %i, %i}",
+			myCube.rotation.x,
+			myCube.rotation.y,
+			myCube.rotation.z
+		);
+	}
 
 	glPushMatrix();
 	glTranslatef(centerCoord.x, centerCoord.y, centerCoord.z);
