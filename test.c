@@ -23,6 +23,7 @@ void resetDebugInfo();
 void resetCameraRotation();
 void drawAxisLines();
 
+void drawNormalSquare(int x, int y, int z);
 void drawCube(Cube *cube, Vec3f coords);
 void drawNormalCube(Cube *cube, int useColor);
 
@@ -253,6 +254,7 @@ void drawCube(Cube *cube, Vec3f coords) {
 	// Rotate to draw cube
 	glMultMatrixf(quatToMatrix(&cube->quat));
 
+	// Draw outline
 	glEnable(GL_POLYGON_OFFSET_LINE);
 	glPolygonOffset(-1,-1);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -260,14 +262,34 @@ void drawCube(Cube *cube, Vec3f coords) {
 	glColor3f(0.2, 0.2, 0.2); // line color
 	drawNormalCube(cube, 0);
 	glDisable(GL_POLYGON_OFFSET_LINE);
+
+	// Draw solid polygons
 	glEnable(GL_POLYGON_OFFSET_FILL);
 	glPolygonOffset(1,1);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glColor3f(1.0, 1.0, 1.0); // fill color
 	drawNormalCube(cube, 1);
 	glDisable(GL_POLYGON_OFFSET_FILL);
 
 	glPopMatrix();
+}
+
+void drawNormalSquare(int x, int y, int z) {
+	if (x != 0) {
+		glVertex3f(x*0.5, 0.5, 0.5);
+		glVertex3f(x*0.5, -0.5, 0.5);
+		glVertex3f(x*0.5, -0.5, -0.5);
+		glVertex3f(x*0.5, 0.5, -0.5);
+	} else if (y != 0) {
+		glVertex3f(0.5, y*0.5, 0.5);
+		glVertex3f(-0.5, y*0.5, 0.5);
+		glVertex3f(-0.5, y*0.5, -0.5);
+		glVertex3f(0.5, y*0.5, -0.5);
+	} else  {
+		glVertex3f(0.5, 0.5, z*0.5);
+		glVertex3f(0.5, -0.5, z*0.5);
+		glVertex3f(-0.5, -0.5, z*0.5);
+		glVertex3f(-0.5, 0.5, z*0.5);
+	}
 }
 
 // draws a 1x1x1 cube centered about the origin with no rotation
@@ -277,50 +299,32 @@ void drawNormalCube(Cube *cube, int useColor) {
 	// top
 	if (useColor)
 		glColor3f(cube->top.color.red, cube->top.color.green, cube->top.color.blue);
-	glVertex3f(0.5, 0.5, 0.5);
-	glVertex3f(-0.5, 0.5, 0.5);
-	glVertex3f(-0.5, 0.5, -0.5);
-	glVertex3f(0.5, 0.5, -0.5);
+	drawNormalSquare(0,1,0);
 
 	// bottom
 	if (useColor)
 		glColor3f(cube->bottom.color.red, cube->bottom.color.green, cube->bottom.color.blue);
-	glVertex3f(0.5, -0.5, 0.5);
-	glVertex3f(-0.5, -0.5, 0.5);
-	glVertex3f(-0.5, -0.5, -0.5);
-	glVertex3f(0.5, -0.5, -0.5);
+	drawNormalSquare(0, -1, 0);
 
 	// left
 	if (useColor)
 		glColor3f(cube->left.color.red, cube->left.color.green, cube->left.color.blue);
-	glVertex3f(-0.5, 0.5, 0.5);
-	glVertex3f(-0.5, -0.5, 0.5);
-	glVertex3f(-0.5, -0.5, -0.5);
-	glVertex3f(-0.5, 0.5, -0.5);
+	drawNormalSquare(-1,0,0);
 
 	// right
 	if (useColor)
 		glColor3f(cube->right.color.red, cube->right.color.green, cube->right.color.blue);
-	glVertex3f(0.5, 0.5, 0.5);
-	glVertex3f(0.5, -0.5, 0.5);
-	glVertex3f(0.5, -0.5, -0.5);
-	glVertex3f(0.5, 0.5, -0.5);
+	drawNormalSquare(1,0,0);
 
 	// front
 	if (useColor)
 		glColor3f(cube->front.color.red, cube->front.color.green, cube->front.color.blue);
-	glVertex3f(0.5, 0.5, -0.5);
-	glVertex3f(0.5, -0.5, -0.5);
-	glVertex3f(-0.5, -0.5, -0.5);
-	glVertex3f(-0.5, 0.5, -0.5);
+	drawNormalSquare(0,0,-1);
 
 	// back
 	if (useColor)
 		glColor3f(cube->back.color.red, cube->back.color.green, cube->back.color.blue);
-	glVertex3f(0.5, 0.5, 0.5);
-	glVertex3f(0.5, -0.5, 0.5);
-	glVertex3f(-0.5, -0.5, 0.5);
-	glVertex3f(-0.5, 0.5, 0.5);
+	drawNormalSquare(0,0,1);
 	glEnd();
 }
 
