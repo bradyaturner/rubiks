@@ -9,23 +9,15 @@
 #include "vector.h"
 #include "quaternion.h"
 
-typedef struct{
-    Vec3f ll;
-    Vec3f ur;
-} Rectangle;
-
-void initialize();
 void display();
-void drawRectangle(Vec3f ll, Vec3f ur, RGB3f color);
-void specialKeys( int key, int x, int y );
 void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods);
 void resetDebugInfo();
 void resetCameraRotation();
 void drawAxisLines();
 
 void drawNormalSquare(int x, int y, int z);
-void drawCube(Cube *cube, Vec3f coords);
 void drawNormalCube(Cube *cube, int useColor);
+void drawCube(Cube *cube, Vec3f coords);
 
 double rotate_y=0; 
 double rotate_x=0;
@@ -35,9 +27,7 @@ double cubeWidth = 0.7;
 GLFWwindow *window;
 
 Cube myCube;
-int printed = 0;
 int cubeDebugInfo = 0;
-const Vec3i origin = {0, 0, 0};
 
 void display(){
 
@@ -77,7 +67,6 @@ void drawAxisLines() {
 }
 
 void resetDebugInfo() {
-	printed = 0;
 	cubeDebugInfo = 0;
 	printf("Cube at position: %i, quat: (%f, %f, %f, %f)\n",
 		myCube.position, myCube.quat.x, myCube.quat.y, myCube.quat.z, myCube.quat.w
@@ -192,17 +181,13 @@ void resetCameraRotation() {
 	rotate_y = 0;
 }
 
-void initialize() {
-	initializeCube(&myCube);
-}
-
 int main( int argc, char* argv[] ){
-	initialize();
+	initializeCube(&myCube);
+
 	if (!glfwInit()) {
 		exit(EXIT_FAILURE);
 	}
 
-	//glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 	window = glfwCreateWindow(640, 480, "Rubik's Cube", NULL, NULL);
 	if (!window) {
 		printf("Problem creating window!\n");
@@ -326,47 +311,5 @@ void drawNormalCube(Cube *cube, int useColor) {
 		glColor3f(cube->back.color.red, cube->back.color.green, cube->back.color.blue);
 	drawNormalSquare(0,0,1);
 	glEnd();
-}
-
-void drawRectangle(Vec3f ll, Vec3f ur, RGB3f color){
-	// TODO rewrite with the assumption we will use translate/rotate/scale functions to position and resize
-	Vec3f ul;
-	Vec3f lr;
-
-	if (ll.z == ur.z) { // rectangle in z-plane
-		ul.x = ll.x;
-		ul.y = ur.y;
-		ul.z = ll.z; // all z equal
-		lr.x = ur.x;
-		lr.y = ll.y;
-		lr.z = ll.z; // all z equal
-	} else if (ll.x == ur.x ) { // rectangle in x-plane
-		ul.z = ll.z;
-		ul.y = ur.y;
-		ul.x = ll.x; // all x equal
-		lr.z = ur.z;
-		lr.y = ll.y;
-		lr.x = ll.x; // all x equal
-	} else { // rectangle in y-plane
-		ul.x = ll.x;
-		ul.z = ur.z;
-		ul.y = ll.y; // all y equal
-		lr.x = ur.x;
-		lr.z = ll.z;
-		lr.y = ll.y; // all y equal
-	}
-
-	RGB3f lineColor = {0.2, 0.2, 0.2};
-	glEnable(GL_POLYGON_OFFSET_LINE);
-	glPolygonOffset(-1,-1);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	glLineWidth((GLfloat)8);
-	drawSquare(lr, ur, ul, ll, lineColor);
-	glDisable(GL_POLYGON_OFFSET_LINE);
-	glEnable(GL_POLYGON_OFFSET_FILL);
-	glPolygonOffset(1,1);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	drawSquare(lr, ur, ul, ll, color);
-	glDisable(GL_POLYGON_OFFSET_FILL);
 }
 
