@@ -16,8 +16,8 @@ all: $(APP)
 $(APP): main.o rubiks.o cube.o vector.o utils.o
 	$(CC) $(FRAMEWORK) $(CFLAGS) -o $@ main.o rubiks.o cube.o vector.o utils.o $(LIBS)
 
-test:	test.o singlecube.o cube.o vector.o utils.o
-	$(CC) $(FRAMEWORK) $(CFLAGS) -o $@ test.o singlecube.o cube.o vector.o utils.o $(LIBS)
+test:	test.o singlecube.o cube.o vector.o utils.o quaternion.o
+	$(CC) $(FRAMEWORK) $(CFLAGS) -o $@ test.o singlecube.o cube.o vector.o utils.o quaternion.o $(LIBS)
 
 singlecube.o:	singlecube.c cube.h vector.h
 	$(CC) $(CFLAGS) -c singlecube.c
@@ -25,8 +25,11 @@ singlecube.o:	singlecube.c cube.h vector.h
 rubiks.o:	rubiks.c cube.h vector.h utils.h
 	$(CC) $(CFLAGS) -c rubiks.c
 
-cube.o:	cube.c vector.h utils.h
+cube.o:	cube.c cube.h vector.h utils.h
 	$(CC) $(CFLAGS) -c cube.c
+
+quaternion.o:	quaternion.c quaternion.h vector.h
+	$(CC) $(CFLAGS) -c quaternion.c
 
 vector.o:	vector.c vector.h
 	$(CC) $(CFLAGS) -c vector.c

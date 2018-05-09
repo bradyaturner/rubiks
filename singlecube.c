@@ -53,7 +53,7 @@ void rotateF(Cube *cube, int face, int direction) { // positive anything=cw, neg
 
 void initializeCube(Cube *cube) {
 	cube->position = 0;
-	cube->rotation = (Vec3i){0, 0, 0};
+	quatInitIdentity(&cube->quat);
 	cube->top.color = (RGB3f){1.0, 1.0, 1.0}; // white
 	cube->bottom.color = (RGB3f){1.0, 1.0, 0.0}; // yellow
 	cube->left.color = (RGB3f){1.0, 0.0, 0.0}; // red

@@ -3,6 +3,7 @@
 
 #include "utils.h"
 #include "vector.h"
+#include "quaternion.h"
 
 typedef struct {
 	RGB3f color;
@@ -16,7 +17,7 @@ typedef struct {
 	CubeFace front;
 	CubeFace back;
 	int position;
-	Vec3i rotation; // degrees of rotation about each axis, can be +/- but should be multiples of 90
+	Quaternion quat;
 } Cube;
 
 void rotateCube(Cube *cube, const Vec3i degrees);

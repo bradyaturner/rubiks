@@ -15,4 +15,5 @@ typedef struct {
 
 Vec3i vectorAdd(Vec3i n1, Vec3i n2);
 Vec3i vectorMultiply(Vec3i n1, int c);
+Vec3f vec3fNormalize(Vec3f vec);
 #endif

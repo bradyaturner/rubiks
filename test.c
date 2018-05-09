@@ -7,6 +7,7 @@
 #include "singlecube.h"
 #include "cube.h"
 #include "vector.h"
+#include "quaternion.h"
 
 typedef struct{
     Vec3f ll;
@@ -15,7 +16,6 @@ typedef struct{
 
 void initialize();
 void display();
-void drawCube();
 void drawRectangle(Vec3f ll, Vec3f ur, RGB3f color);
 void specialKeys( int key, int x, int y );
 void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -23,7 +23,7 @@ void resetDebugInfo();
 void resetCameraRotation();
 void drawAxisLines();
 
-void drawCube2(Cube *cube, Vec3f coords);
+void drawCube(Cube *cube, Vec3f coords);
 void drawNormalCube(Cube *cube, int useColor);
 
 double rotate_y=0; 
@@ -50,9 +50,8 @@ void display(){
 	glRotatef( rotate_x, 1.0, 0.0, 0.0 );
 	glRotatef( rotate_y, 0.0, 1.0, 0.0 );
 
-	//drawCube();
 	Vec3f pos = {0.0,0.0,0.0};
-	drawCube2(&myCube, pos);
+	drawCube(&myCube, pos);
 
 	drawAxisLines();
 	cubeDebugInfo = 0;
@@ -79,8 +78,8 @@ void drawAxisLines() {
 void resetDebugInfo() {
 	printed = 0;
 	cubeDebugInfo = 0;
-	printf("Cube at position: %i, rotation: (%i, %i, %i)\n",
-		myCube.position, myCube.rotation.x, myCube.rotation.y, myCube.rotation.z
+	printf("Cube at position: %i, quat: (%f, %f, %f, %f)\n",
+		myCube.position, myCube.quat.x, myCube.quat.y, myCube.quat.z, myCube.quat.w
 	);
 }
 
@@ -238,23 +237,21 @@ void drawSquare(Vec3f lr, Vec3f ur, Vec3f ul, Vec3f ll, RGB3f color) {
 	glEnd();
 }
 
-//void drawCube2(Vec3f coords, Vec3f normal, int rotation) {
-void drawCube2(Cube *cube, Vec3f coords) {
+void drawCube(Cube *cube, Vec3f coords) {
 	glPushMatrix();
 	if (cubeDebugInfo) {
-		printf("Drawing cube 0 with rotation: {%i, %i, %i}",
-			cube->rotation.x,
-			cube->rotation.y,
-			cube->rotation.z
+		printf("Drawing cube 0 with quaternion: {%f, %f, %f, %f}\n",
+			cube->quat.x,
+			cube->quat.y,
+			cube->quat.z,
+			cube->quat.w
 		);
 	}
 	glTranslatef(coords.x, coords.y, coords.z);
 	// glScalef( 2.0, 2.0, 0.0 ); use this instead of adding/subtracting halfWidth
 
 	// Rotate to draw cube
-	glRotatef( cube->rotation.x, 1.0, 0.0, 0.0 );
-	glRotatef( cube->rotation.y, 0.0, 1.0, 0.0 );
-	glRotatef( cube->rotation.z, 0.0, 0.0, 1.0 );
+	glMultMatrixf(quatToMatrix(&cube->quat));
 
 	glEnable(GL_POLYGON_OFFSET_LINE);
 	glPolygonOffset(-1,-1);
@@ -369,55 +366,3 @@ void drawRectangle(Vec3f ll, Vec3f ur, RGB3f color){
 	glDisable(GL_POLYGON_OFFSET_FILL);
 }
 
-void drawCube() {
-	Vec3f centerCoord = {0,0,0};
-	double halfWidth = cubeWidth/2;
-	if (myCube.position == 0 && cubeDebugInfo) {
-		printf("Drawing cube 0 with rotation: {%i, %i, %i}",
-			myCube.rotation.x,
-			myCube.rotation.y,
-			myCube.rotation.z
-		);
-	}
-
-	glPushMatrix();
-	glTranslatef(centerCoord.x, centerCoord.y, centerCoord.z);
-	// glScalef( 2.0, 2.0, 0.0 ); use this instead of adding/subtracting halfWidth
-
-	// Rotate to draw cube
-	glRotatef( myCube.rotation.x, 1.0, 0.0, 0.0 );
-	glRotatef( myCube.rotation.y, 0.0, 1.0, 0.0 );
-	glRotatef( myCube.rotation.z, 0.0, 0.0, 1.0 );
-
-	// FRONT
-	Vec3f ur = {origin.x+halfWidth, origin.y+halfWidth, origin.z-halfWidth};
-	Vec3f ll = {origin.x-halfWidth, origin.y-halfWidth, origin.z-halfWidth};
-	drawRectangle(ll, ur, myCube.front.color);
-
-	// BACK
-	ur = (Vec3f){ .x = origin.x+halfWidth, .y = origin.y+halfWidth, .z = origin.z+halfWidth};
-	ll = (Vec3f){ .x = origin.x-halfWidth, .y = origin.y-halfWidth, .z = origin.z+halfWidth};
-	drawRectangle(ll, ur, myCube.back.color);
-
-	// RIGHT
-	ur = (Vec3f){ .x = origin.x+halfWidth, .y = origin.y+halfWidth, .z = origin.z+halfWidth };
-	ll = (Vec3f){ .x = origin.x+halfWidth, .y = origin.y-halfWidth, .z = origin.z-halfWidth };
-	drawRectangle(ll, ur, myCube.right.color);
-
-	// LEFT
-	ur = (Vec3f){ .x = origin.x-halfWidth, .y = origin.y+halfWidth, .z = origin.z-halfWidth };
-	ll = (Vec3f){ .x = origin.x-halfWidth, .y = origin.y-halfWidth, .z = origin.z+halfWidth };
-	drawRectangle(ll, ur, myCube.left.color);
-
-	// TOP
-	ur = (Vec3f){ .x = origin.x+halfWidth, .y = origin.y+halfWidth, .z = origin.z+halfWidth };
-	ll = (Vec3f){ .x = origin.x-halfWidth, .y = origin.y+halfWidth, .z = origin.z-halfWidth };
-	drawRectangle(ll, ur, myCube.top.color);
-
-	// BOTTOM
-	ur = (Vec3f){ .x = origin.x+halfWidth, .y = origin.y-halfWidth, .z = origin.z+halfWidth };
-	ll = (Vec3f){ .x = origin.x-halfWidth, .y = origin.y-halfWidth, .z = origin.z-halfWidth };
-	drawRectangle(ll, ur, myCube.bottom.color);
-
-	glPopMatrix();
-}
