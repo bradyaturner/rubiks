@@ -16,6 +16,7 @@ typedef struct {
 	CubeFace right;
 	CubeFace front;
 	CubeFace back;
+	int id;
 	int position;
 	Quaternion quat;
 } Cube;

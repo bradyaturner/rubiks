@@ -5,24 +5,28 @@
 const int rotation[9] = {2, 5, 8, 1, 4, 7, 0, 3, 6}; // to rotate ccw flip layer and rotation values
 
 const int topLayer[9] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
-const Vec3i topLayerDegrees = {0, 90, 0};
+const Vec3i topLayerDegrees = {0, -90, 0};
 
 const int bottomLayer[9] = {24, 25, 26, 21, 22, 23, 18, 19, 20};
-const Vec3i bottomLayerDegrees = {0, -90, 0};
+const Vec3i bottomLayerDegrees = {0, 90, 0};
 
 const int frontLayer[9] = {6, 7, 8, 15, 16, 17, 24, 25, 26};
-const Vec3i frontLayerDegrees = {0, 0, 90};
+const Vec3i frontLayerDegrees = {0, 0, -90};
 
 const int backLayer[9] = {2, 1, 0, 11, 10, 9, 20, 19, 18};
-const Vec3i backLayerDegrees = {0, 0, -90};
+const Vec3i backLayerDegrees = {0, 0, 90};
 
 const int rightLayer[9] = {8, 5, 2, 17, 14, 11, 26, 23, 20};
-const Vec3i rightLayerDegrees = {90, 0, 0};
+const Vec3i rightLayerDegrees = {-90, 0, 0};
 
 const int leftLayer[9] = {0, 3, 6, 9, 12, 15, 18, 21, 24};
-const Vec3i leftLayerDegrees = {-90, 0, 0};
+const Vec3i leftLayerDegrees = {90, 0, 0};
 
 void rotateLayer(Rubiks *rubiks, const int layer[], const Vec3i degrees, int direction) {
+	printf("rotateLayer: [%i, %i, %i, %i, %i, %i, %i, %i, %i] -> {%i, %i, %i} direction: %i\n",
+		layer[0], layer[1], layer[2], layer[3], layer[4], layer[5], layer[6], layer[7], layer[8],
+		degrees.x, degrees.y, degrees.z, direction
+	);
 	int indices[9];
 	for (int i=0; i<9; i++) {
 		printf("Looking for cube at position = %i", layer[i]);
@@ -52,13 +56,18 @@ void rotateLayer(Rubiks *rubiks, const int layer[], const Vec3i degrees, int dir
 }
 
 void translateLayer(Rubiks *rubiks, int layer[], int translation[]) {
+	int indices[9];
 	for (int i=0; i<9; i++) {
-		int index = findCube(rubiks, layer[i]);
-		printf("Rotating cube at position %i to position %i\n",
-			rubiks->cubes[index].position,
+		indices[i] = findCube(rubiks, layer[i]);
+	}
+
+	for (int i=0; i<9; i++) {
+		printf("Rotating cube w/ ID=%i at position %i to position %i\n",
+			rubiks->cubes[indices[i]].id,
+			rubiks->cubes[indices[i]].position,
 			translation[i]
 		);
-		rubiks->cubes[index].position = translation[i];
+		rubiks->cubes[indices[i]].position = translation[i];
 	}
 }
 
@@ -109,8 +118,9 @@ int findCube(Rubiks *rubiks, int cubePosition) {
 
 void initializeRubiks(Rubiks *rubiks) {
 	for (int i = 0; i<27; i++) {
+		rubiks->cubes[i].id = i;
 		rubiks->cubes[i].position = i;
-		rubiks->cubes[i].rotation = (Vec3i){0, 0, 0};
+		quatInitIdentity(&rubiks->cubes[i].quat);
 		rubiks->cubes[i].top.color = (RGB3f){1.0, 1.0, 1.0}; // white
 		rubiks->cubes[i].bottom.color = (RGB3f){1.0, 1.0, 0.0}; // yellow
 		rubiks->cubes[i].left.color = (RGB3f){1.0, 0.0, 0.0}; // red

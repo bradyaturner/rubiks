@@ -1,41 +1,41 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <math.h>
-#define GL_GLEXT_PROTOTYPES
-#ifdef __APPLE__
-#include <GLUT/glut.h>
-#else
-#include <GL/glut.h>
-#endif
+#include <GLFW/glfw3.h>
 
 #include "rubiks.h"
 #include "cube.h"
 #include "vector.h"
+#include "quaternion.h"
 
-typedef struct{
-    Vec3f ll;
-    Vec3f ur;
-} Rectangle;
-
-void initialize();
+// OpenGL/GLFW functions
+void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods);
 void display();
+
+// Control functions
+void resetCameraRotation();
+
+// Drawing functions
+void drawAxisLines();
 void drawRubiksCube();
-void drawCube(Cube cube, Vec3f origin);
-void drawRectangle(Vec3f ll, Vec3f ur, RGB3f color);
-void specialKeys( int key, int x, int y );
-void keyboardHandler(unsigned char key, int x, int y);
+void drawCube(Cube cube, Vec3f coords);
+void drawNormalCube(Cube cube, int useColor);
+void drawNormalSquare(int x, int y, int z);
+
+// Debug functions
 void resetDebugInfo();
-void resetRotation();
 
 double rotate_y=0; 
 double rotate_x=0;
 
 double cubeWidth = 0.3;
 
-int windowId;
+GLFWwindow *window;
 
 Rubiks rubiksCube;
 int printed = 0;
+int debug = 0;
 const Vec3i origin = {0, 0, 0};
 
 void display(){
@@ -51,9 +51,28 @@ void display(){
 	glRotatef( rotate_y, 0.0, 1.0, 0.0 );
 
 	drawRubiksCube();
+	if (debug) {
+		drawAxisLines();
+	}
 
 	glFlush();
-	glutSwapBuffers();
+}
+ 
+void drawAxisLines() {
+	glBegin(GL_LINES);
+	// x axis is RED
+	glColor3f(1.0, 0.0, 0.0);
+	glVertex3f(0.0, 0.0, 0.0);
+	glVertex3f(10.0, 0.0, 0.0);
+	// y axis is GREEN
+	glColor3f(0.0, 1.0, 0.0);
+	glVertex3f(0.0, 0.0, 0.0);
+	glVertex3f(0.0, 10.0, 0.0);
+	// z axis is BLUE
+	glColor3f(0.0, 0.0, 1.0);
+	glVertex3f(0.0, 0.0, 0.0);
+	glVertex3f(0.0, 0.0, 10.0);
+	glEnd();
 }
 
 void drawRubiksCube(){
@@ -87,108 +106,141 @@ void resetDebugInfo() {
 	printed = 0;
 	for (int i=0; i<27; i++) {
 		Cube* cube = &rubiksCube.cubes[i];
-		printf("Cube #%i at position: %i, rotation: (%i, %i, %i)\n",
-			i, cube->position, cube->rotation.x, cube->rotation.y, cube->rotation.z);
+		printf("Cube #%i at position: %i, quaternion: {%f, %f, %f, %f}\n",
+			i, cube->position, cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);
 	}
 }
 
-void specialKeys( int key, int x, int y ) {
-	if (key == GLUT_KEY_RIGHT) {
-		rotate_y += 5;
-	} else if (key == GLUT_KEY_LEFT) {
-		rotate_y -= 5;
-	} else if (key == GLUT_KEY_UP) {
-		rotate_x += 5;
-	} else if (key == GLUT_KEY_DOWN) {
-		rotate_x -= 5;
+void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	if (action != GLFW_PRESS && action != GLFW_REPEAT) {
+		return;
 	}
 
-	glutPostRedisplay();
-}
-
-void keyboardHandler(unsigned char key, int x, int y) {
 	printf("Key pressed: %i\n", key);
 	switch (key)
 	{
 		case 27:
 		case 81:
 		case 113:
-			glutDestroyWindow(windowId); // should I check if this is initialized?
-			exit(0);
+			glfwSetWindowShouldClose(window, 1);
 			break;
-		case 112:
+		case GLFW_KEY_P:
 			resetDebugInfo();
 			break;
-		case 33:
-			rotateCubeFace(&rubiksCube, 1, -1); // top layer ccw
-			break;
-		case 35:
-			rotateCubeFace(&rubiksCube, 5, -1); // front layer cw
-			break;
-		case 36:
-			rotateCubeFace(&rubiksCube, 6, -1); // SHIFT-4 back layer ccw
-			break;
-		case 37:
-			rotateCubeFace(&rubiksCube, 4, -1); // SHIFT-5 right layer ccw
+		case GLFW_KEY_D:
+			debug = !debug;
 			break;
 		case 48:
-			resetRotation();
+			resetCameraRotation();
 			break;
-		case 49:
-			rotateCubeFace(&rubiksCube, 1, 1); // top layer cw
+		case GLFW_KEY_RIGHT:
+			rotate_y += 5;
 			break;
-		case 50:
-			rotateCubeFace(&rubiksCube, 2, 1); // bottom layer cw
+		case GLFW_KEY_LEFT:
+			rotate_y -= 5;
 			break;
-		case 51:
-			rotateCubeFace(&rubiksCube, 5, 1); // front layer cw
+		case GLFW_KEY_UP:
+			rotate_x += 5;
 			break;
-		case 52:
-			rotateCubeFace(&rubiksCube, 6, 1); // 4 back layer cw
+		case GLFW_KEY_DOWN:
+			rotate_x -= 5;
 			break;
-		case 53:
-			rotateCubeFace(&rubiksCube, 4, 1); // 5 right layer cw
+		case GLFW_KEY_1:
+			if (action == GLFW_PRESS) {
+				if (mods==0) {
+					rotateCubeFace(&rubiksCube, 1, 1);
+				} else if (mods == GLFW_MOD_SHIFT) {
+					rotateCubeFace(&rubiksCube, 1, -1);
+				}
+			}
 			break;
-		case 54:
-			rotateCubeFace(&rubiksCube, 3, 1); // 6 left layer cw
+		case GLFW_KEY_2:
+			if (action == GLFW_PRESS) {
+				if (mods==0) {
+					rotateCubeFace(&rubiksCube, 2, 1);
+				} else if (mods == GLFW_MOD_SHIFT) {
+					rotateCubeFace(&rubiksCube, 2, -1);
+				}
+			}
 			break;
-		case 64:
-			rotateCubeFace(&rubiksCube, 2, -1); // bottom layer ccw
+		case GLFW_KEY_3:
+			if (action == GLFW_PRESS) {
+				if (mods==0) {
+					rotateCubeFace(&rubiksCube, 3, 1);
+				} else if (mods == GLFW_MOD_SHIFT) {
+					rotateCubeFace(&rubiksCube, 3, -1);
+				}
+			}
 			break;
-		case 94:
-			rotateCubeFace(&rubiksCube, 3, -1); // SHIFT-6 left layer ccw
+		case GLFW_KEY_4:
+			if (action == GLFW_PRESS) {
+				if (mods==0) {
+					rotateCubeFace(&rubiksCube, 4, 1);
+				} else if (mods == GLFW_MOD_SHIFT) {
+					rotateCubeFace(&rubiksCube, 4, -1);
+				}
+			}
+			break;
+		case GLFW_KEY_5:
+			if (action == GLFW_PRESS) {
+				if (mods==0) {
+					rotateCubeFace(&rubiksCube, 5, 1);
+				} else if (mods == GLFW_MOD_SHIFT) {
+					rotateCubeFace(&rubiksCube, 5, -1);
+				}
+			}
+			break;
+		case GLFW_KEY_6:
+			if (action == GLFW_PRESS) {
+				if (mods==0) {
+					rotateCubeFace(&rubiksCube, 6, 1);
+				} else if (mods == GLFW_MOD_SHIFT) {
+					rotateCubeFace(&rubiksCube, 6, -1);
+				}
+			}
 			break;
 	}
-	glutPostRedisplay();
 }
 
-void resetRotation() {
+void resetCameraRotation() {
 	rotate_x = 0;
 	rotate_y = 0;
 }
 
-void initialize() {
-	initializeRubiks(&rubiksCube);
-}
-
 int main( int argc, char* argv[] ){
-	initialize();
-	glutInit(&argc,argv);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-	windowId = glutCreateWindow("Rubik's Cube");
+	initializeRubiks(&rubiksCube);
+
+	if (!glfwInit()) {
+		exit(EXIT_FAILURE);
+	}
+
+	window = glfwCreateWindow(640, 480, "Rubik's Cube", NULL, NULL);
+	if (!window) {
+		printf("Problem creating window!\n");
+		exit(1);
+	}
+	glfwMakeContextCurrent(window);
+	glfwSwapInterval(1);
+
 	glEnable(GL_DEPTH_TEST);
-	glutDisplayFunc(display);
-	glutSpecialFunc(specialKeys);
-	glutKeyboardFunc(keyboardHandler);
-	glClearColor(0.3, 0.3, 0.3, 0.0);
+	glfwSetKeyCallback(window, keyboardHandler);
+	glClearColor(0.85, 0.85, 0.85, 0.0);
 
-	glutMainLoop();
+	while (!glfwWindowShouldClose(window)) {
+		int width, height;
+		glfwGetFramebufferSize(window, &width, &height);
+		display();
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
 
-	return 0;
+	glfwDestroyWindow(window);
+	glfwTerminate();
+	exit(EXIT_SUCCESS);
 }
 
 void drawSquare(Vec3f lr, Vec3f ur, Vec3f ul, Vec3f ll, RGB3f color) {
-	glBegin(GL_POLYGON);
+	glBegin(GL_QUADS);
 	glColor3f(color.red, color.green, color.blue);
 	glVertex3f(lr.x, lr.y, lr.z);
 	glVertex3f(ur.x, ur.y, ur.z);
@@ -208,78 +260,84 @@ void drawSquare(Vec3f lr, Vec3f ur, Vec3f ul, Vec3f ll, RGB3f color) {
 	glEnd();
 }
 
-void drawRectangle(Vec3f ll, Vec3f ur, RGB3f color){
-	// TODO rewrite with the assumption we will use translate/rotate/scale functions to position and resize
-	Vec3f ul;
-	Vec3f lr;
-
-	if (ll.z == ur.z) { // rectangle in z-plane
-		ul.x = ll.x;
-		ul.y = ur.y;
-		ul.z = ll.z; // all z equal
-		lr.x = ur.x;
-		lr.y = ll.y;
-		lr.z = ll.z; // all z equal
-	} else if (ll.x == ur.x ) { // rectangle in x-plane
-		ul.z = ll.z;
-		ul.y = ur.y;
-		ul.x = ll.x; // all x equal
-		lr.z = ur.z;
-		lr.y = ll.y;
-		lr.x = ll.x; // all x equal
-	} else { // rectangle in y-plane
-		ul.x = ll.x;
-		ul.z = ur.z;
-		ul.y = ll.y; // all y equal
-		lr.x = ur.x;
-		lr.z = ll.z;
-		lr.y = ll.y; // all y equal
-	}
-
-	drawSquare(lr, ur, ul, ll, color);
-}
-
-void drawCube(Cube cube, Vec3f centerCoord) {
-	double halfWidth = cubeWidth/2;
-
+void drawCube(Cube cube, Vec3f coords) {
 	glPushMatrix();
-	glTranslatef(centerCoord.x, centerCoord.y, centerCoord.z);
-	// glScalef( 2.0, 2.0, 0.0 ); use this instead of adding/subtracting halfWidth
 
-	// Rotate to draw cube
-	glRotatef( cube.rotation.x, 1.0, 0.0, 0.0 );
-	glRotatef( cube.rotation.y, 0.0, 1.0, 0.0 );
-	glRotatef( cube.rotation.z, 0.0, 0.0, 1.0 );
+	glTranslatef(coords.x, coords.y, coords.z);
+	glScalef(cubeWidth, cubeWidth, cubeWidth);
+	glMultMatrixf(quatToMatrix(&cube.quat));
 
-	// FRONT
-	Vec3f ur = {origin.x+halfWidth, origin.y+halfWidth, origin.z-halfWidth};
-	Vec3f ll = {origin.x-halfWidth, origin.y-halfWidth, origin.z-halfWidth};
-	drawRectangle(ll, ur, cube.front.color);
+	// Draw outline
+	glEnable(GL_POLYGON_OFFSET_LINE);
+	glPolygonOffset(-1,-1);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glLineWidth((GLfloat)8); // this should be proportional to cube size
+	glColor3f(0.2, 0.2, 0.2); // line color
+	drawNormalCube(cube, 0);
+	glDisable(GL_POLYGON_OFFSET_LINE);
 
-	// BACK
-	ur = (Vec3f){ .x = origin.x+halfWidth, .y = origin.y+halfWidth, .z = origin.z+halfWidth};
-	ll = (Vec3f){ .x = origin.x-halfWidth, .y = origin.y-halfWidth, .z = origin.z+halfWidth};
-	drawRectangle(ll, ur, cube.back.color);
-
-	// RIGHT
-	ur = (Vec3f){ .x = origin.x+halfWidth, .y = origin.y+halfWidth, .z = origin.z+halfWidth };
-	ll = (Vec3f){ .x = origin.x+halfWidth, .y = origin.y-halfWidth, .z = origin.z-halfWidth };
-	drawRectangle(ll, ur, cube.right.color);
-
-	// LEFT
-	ur = (Vec3f){ .x = origin.x-halfWidth, .y = origin.y+halfWidth, .z = origin.z-halfWidth };
-	ll = (Vec3f){ .x = origin.x-halfWidth, .y = origin.y-halfWidth, .z = origin.z+halfWidth };
-	drawRectangle(ll, ur, cube.left.color);
-
-	// TOP
-	ur = (Vec3f){ .x = origin.x+halfWidth, .y = origin.y+halfWidth, .z = origin.z+halfWidth };
-	ll = (Vec3f){ .x = origin.x-halfWidth, .y = origin.y+halfWidth, .z = origin.z-halfWidth };
-	drawRectangle(ll, ur, cube.top.color);
-
-	// BOTTOM
-	ur = (Vec3f){ .x = origin.x+halfWidth, .y = origin.y-halfWidth, .z = origin.z+halfWidth };
-	ll = (Vec3f){ .x = origin.x-halfWidth, .y = origin.y-halfWidth, .z = origin.z-halfWidth };
-	drawRectangle(ll, ur, cube.bottom.color);
+	// Draw solid polygons
+	glEnable(GL_POLYGON_OFFSET_FILL);
+	glPolygonOffset(1,1); // just guessing on these values
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	drawNormalCube(cube, 1);
+	glDisable(GL_POLYGON_OFFSET_FILL);
 
 	glPopMatrix();
+}
+
+void drawNormalSquare(int x, int y, int z) {
+	if (x != 0) {
+		glVertex3f(x*0.5, 0.5, 0.5);
+		glVertex3f(x*0.5, -0.5, 0.5);
+		glVertex3f(x*0.5, -0.5, -0.5);
+		glVertex3f(x*0.5, 0.5, -0.5);
+	} else if (y != 0) {
+		glVertex3f(0.5, y*0.5, 0.5);
+		glVertex3f(-0.5, y*0.5, 0.5);
+		glVertex3f(-0.5, y*0.5, -0.5);
+		glVertex3f(0.5, y*0.5, -0.5);
+	} else  {
+		glVertex3f(0.5, 0.5, z*0.5);
+		glVertex3f(0.5, -0.5, z*0.5);
+		glVertex3f(-0.5, -0.5, z*0.5);
+		glVertex3f(-0.5, 0.5, z*0.5);
+	}
+}
+
+// draws a 1x1x1 cube centered about the origin with no rotation
+void drawNormalCube(Cube cube, int useColor) {
+	glBegin(GL_QUADS);
+
+	// top
+	if (useColor)
+		glColor3f(cube.top.color.red, cube.top.color.green, cube.top.color.blue);
+	drawNormalSquare(0,1,0);
+
+	// bottom
+	if (useColor)
+		glColor3f(cube.bottom.color.red, cube.bottom.color.green, cube.bottom.color.blue);
+	drawNormalSquare(0, -1, 0);
+
+	// left
+	if (useColor)
+		glColor3f(cube.left.color.red, cube.left.color.green, cube.left.color.blue);
+	drawNormalSquare(-1,0,0);
+
+	// right
+	if (useColor)
+	glColor3f(cube.right.color.red, cube.right.color.green, cube.right.color.blue);
+	drawNormalSquare(1,0,0);
+
+	// front
+	if (useColor)
+	glColor3f(cube.front.color.red, cube.front.color.green, cube.front.color.blue);
+	drawNormalSquare(0,0,-1);
+
+	// back
+	if (useColor)
+		glColor3f(cube.back.color.red, cube.back.color.green, cube.back.color.blue);
+	drawNormalSquare(0,0,1);
+
+	glEnd();
 }

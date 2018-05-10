@@ -213,16 +213,6 @@ int main( int argc, char* argv[] ){
     exit(EXIT_SUCCESS);
 }
 
-void drawSquare(Vec3f lr, Vec3f ur, Vec3f ul, Vec3f ll, RGB3f color) {
-	glBegin(GL_QUADS);
-	glColor3f(color.red, color.green, color.blue);
-	glVertex3f(lr.x, lr.y, lr.z);
-	glVertex3f(ur.x, ur.y, ur.z);
-	glVertex3f(ul.x, ul.y, ul.z);
-	glVertex3f(ll.x, ll.y, ll.z);
-	glEnd();
-}
-
 void drawCube(Cube *cube, Vec3f coords) {
 	glPushMatrix();
 	if (cubeDebugInfo) {

@@ -13,8 +13,8 @@ APP= rubiks
  
 all: $(APP)
 
-$(APP): main.o rubiks.o cube.o vector.o utils.o
-	$(CC) $(FRAMEWORK) $(CFLAGS) -o $@ main.o rubiks.o cube.o vector.o utils.o $(LIBS)
+$(APP): main.o rubiks.o cube.o vector.o utils.o quaternion.o
+	$(CC) $(FRAMEWORK) $(CFLAGS) -o $@ main.o rubiks.o cube.o vector.o utils.o quaternion.o $(LIBS)
 
 test:	test.o singlecube.o cube.o vector.o utils.o quaternion.o
 	$(CC) $(FRAMEWORK) $(CFLAGS) -o $@ test.o singlecube.o cube.o vector.o utils.o quaternion.o $(LIBS)
