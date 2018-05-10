@@ -55,7 +55,7 @@ void rotateLayer(Rubiks *rubiks, const int layer[], const Vec3i degrees, int dir
 	}
 }
 
-void translateLayer(Rubiks *rubiks, int layer[], int translation[]) {
+void translateLayer(Rubiks *rubiks, const int layer[], const int translation[]) {
 	int indices[9];
 	for (int i=0; i<9; i++) {
 		indices[i] = findCube(rubiks, layer[i]);

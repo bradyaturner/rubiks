@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS= -g -Wall -std=c99
+CFLAGS= -g -Wall
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
