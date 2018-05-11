@@ -20,7 +20,7 @@ void resetCameraRotation();
 void drawAxisLines();
 void drawRubiksCube();
 void drawCube(Cube cube, Vec3f coords);
-void drawNormalCube(Cube cube, int useColor);
+void drawNormalCube(const Cube cube, int useColor);
 void drawNormalSquare(int x, int y, int z);
 
 // Debug functions
@@ -239,27 +239,6 @@ int main( int argc, char* argv[] ){
 	exit(EXIT_SUCCESS);
 }
 
-void drawSquare(Vec3f lr, Vec3f ur, Vec3f ul, Vec3f ll, RGB3f color) {
-	glBegin(GL_QUADS);
-	glColor3f(color.red, color.green, color.blue);
-	glVertex3f(lr.x, lr.y, lr.z);
-	glVertex3f(ur.x, ur.y, ur.z);
-	glVertex3f(ul.x, ul.y, ul.z);
-	glVertex3f(ll.x, ll.y, ll.z);
-	glEnd();
-
-	// Black outline for square
-	// TODO this is broken on one corner (yellow-red/front-bottom edge)
-	glLineWidth((GLfloat)5);
-	glBegin(GL_LINE_STRIP);
-	glColor3f(0.0, 0.0, 0.0);
-	glVertex3f(lr.x, lr.y, lr.z);
-	glVertex3f(ur.x, ur.y, ur.z);
-	glVertex3f(ul.x, ul.y, ul.z);
-	glVertex3f(ll.x, ll.y, ll.z);
-	glEnd();
-}
-
 void drawCube(Cube cube, Vec3f coords) {
 	glPushMatrix();
 
@@ -286,58 +265,31 @@ void drawCube(Cube cube, Vec3f coords) {
 	glPopMatrix();
 }
 
-void drawNormalSquare(int x, int y, int z) {
-	if (x != 0) {
-		glVertex3f(x*0.5, 0.5, 0.5);
-		glVertex3f(x*0.5, -0.5, 0.5);
-		glVertex3f(x*0.5, -0.5, -0.5);
-		glVertex3f(x*0.5, 0.5, -0.5);
-	} else if (y != 0) {
-		glVertex3f(0.5, y*0.5, 0.5);
-		glVertex3f(-0.5, y*0.5, 0.5);
-		glVertex3f(-0.5, y*0.5, -0.5);
-		glVertex3f(0.5, y*0.5, -0.5);
-	} else  {
-		glVertex3f(0.5, 0.5, z*0.5);
-		glVertex3f(0.5, -0.5, z*0.5);
-		glVertex3f(-0.5, -0.5, z*0.5);
-		glVertex3f(-0.5, 0.5, z*0.5);
-	}
-}
+void drawNormalCube(const Cube cube, int useColor) {
+	GLfloat vertices[] =
+	{
+		-0.5, -0.5, -0.5,		-0.5, -0.5, 0.5,		-0.5, 0.5, 0.5,		-0.5, 0.5, -0.5, // left
+		0.5, -0.5, -0.5,		0.5, -0.5,  0.5,		0.5,  0.5, 0.5,		0.5,  0.5, -0.5, // right
+		-0.5, -0.5, -0.5,		-0.5, -0.5,  0.5,		0.5, -0.5, 0.5,		0.5, -0.5, -0.5, // bottom
+		-0.5,  0.5, -0.5,		-0.5,  0.5,  0.5,		0.5, 0.5, 0.5,		0.5,  0.5, -0.5, // top
+		-0.5, -0.5, -0.5,		-0.5,  0.5, -0.5,		0.5, 0.5, -0.5,		0.5, -0.5, -0.5, // front
+		-0.5, -0.5,  0.5,		-0.5,  0.5,  0.5,		0.5, 0.5, 0.5,		0.5, -0.5,  0.5  // back
+	};
 
-// draws a 1x1x1 cube centered about the origin with no rotation
-void drawNormalCube(Cube cube, int useColor) {
-	glBegin(GL_QUADS);
+	float *colors = getColorArray(cube);
 
-	// top
+	glEnableClientState(GL_VERTEX_ARRAY);
 	if (useColor)
-		glColor3f(cube.top.color.red, cube.top.color.green, cube.top.color.blue);
-	drawNormalSquare(0,1,0);
+		glEnableClientState(GL_COLOR_ARRAY);
 
-	// bottom
+	glVertexPointer(3, GL_FLOAT, 0, vertices);
+
 	if (useColor)
-		glColor3f(cube.bottom.color.red, cube.bottom.color.green, cube.bottom.color.blue);
-	drawNormalSquare(0, -1, 0);
+		glColorPointer(3, GL_FLOAT, 0, colors);
 
-	// left
+	glDrawArrays(GL_QUADS, 0, 24);
+
+	glDisableClientState(GL_VERTEX_ARRAY);
 	if (useColor)
-		glColor3f(cube.left.color.red, cube.left.color.green, cube.left.color.blue);
-	drawNormalSquare(-1,0,0);
-
-	// right
-	if (useColor)
-	glColor3f(cube.right.color.red, cube.right.color.green, cube.right.color.blue);
-	drawNormalSquare(1,0,0);
-
-	// front
-	if (useColor)
-	glColor3f(cube.front.color.red, cube.front.color.green, cube.front.color.blue);
-	drawNormalSquare(0,0,-1);
-
-	// back
-	if (useColor)
-		glColor3f(cube.back.color.red, cube.back.color.green, cube.back.color.blue);
-	drawNormalSquare(0,0,1);
-
-	glEnd();
+		glDisableClientState(GL_COLOR_ARRAY);
 }

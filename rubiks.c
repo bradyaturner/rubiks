@@ -118,14 +118,6 @@ int findCube(Rubiks *rubiks, int cubePosition) {
 
 void initializeRubiks(Rubiks *rubiks) {
 	for (int i = 0; i<27; i++) {
-		rubiks->cubes[i].id = i;
-		rubiks->cubes[i].position = i;
-		quatInitIdentity(&rubiks->cubes[i].quat);
-		rubiks->cubes[i].top.color = (RGB3f){1.0, 1.0, 1.0}; // white
-		rubiks->cubes[i].bottom.color = (RGB3f){1.0, 1.0, 0.0}; // yellow
-		rubiks->cubes[i].left.color = (RGB3f){1.0, 0.0, 0.0}; // red
-		rubiks->cubes[i].right.color = (RGB3f){1.0, 0.65, 0.0}; // orange
-		rubiks->cubes[i].front.color = (RGB3f){0.0, 1.0, 0.0}; // green
-		rubiks->cubes[i].back.color = (RGB3f){0.0, 0.0, 1.0}; // blue
+		initializeCube(&rubiks->cubes[i], i, i);
 	}
 }
