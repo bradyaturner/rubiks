@@ -16,6 +16,7 @@ void display();
 
 // Control functions
 void resetCameraRotation();
+void printHelpText();
 
 // Drawing functions
 void drawAxisLines();
@@ -27,7 +28,7 @@ void drawNormalSquare(int x, int y, int z);
 // Debug functions
 void resetDebugInfo();
 
-double rotate_y=0; 
+double rotate_y=0;
 double rotate_x=0;
 
 double cubeWidth = 0.3;
@@ -117,10 +118,12 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 	log_debug("Key pressed: %i\n", key);
 	switch (key)
 	{
-		case 27:
-		case 81:
-		case 113:
+		case GLFW_KEY_ESCAPE:
+		case GLFW_KEY_Q:
 			glfwSetWindowShouldClose(window, 1);
+			break;
+		case GLFW_KEY_H:
+			printHelpText();
 			break;
 		case GLFW_KEY_P:
 			resetDebugInfo();
@@ -205,6 +208,30 @@ void resetCameraRotation() {
 	rotate_y = 0;
 }
 
+void printHelpText() {
+	printf("Controls:\n");
+
+	printf("\tGeneral:\n");
+	printf("\t\th: print this dialog\n");
+	printf("\t\tq/ESC: quit\n");
+	printf("\t\td: enable/disable debug mode\n");
+	printf("\t\tp: print debug info\n");
+
+	printf("\tCamera controls:\n");
+
+	printf("\t\t0: reset rotation\n");
+	printf("\t\tleft/right: rotate camera y-axis\n");
+	printf("\t\tup/down: rotate camera x-axis\n");
+
+	printf("\tRotation keys (key rotates clockwise, shift+key rotates ccw):\n");
+	printf("\t\t1: left face\n");
+	printf("\t\t2: right face\n");
+	printf("\t\t3: bottom face\n");
+	printf("\t\t4: top face\n");
+	printf("\t\t5: front face\n");
+	printf("\t\t6: back face\n");
+}
+
 int main( int argc, char* argv[] ){
 	initializeRubiks(&rubiksCube);
 
@@ -223,6 +250,8 @@ int main( int argc, char* argv[] ){
 	glEnable(GL_DEPTH_TEST);
 	glfwSetKeyCallback(window, keyboardHandler);
 	glClearColor(0.85, 0.85, 0.85, 0.0);
+
+	printHelpText();
 
 	while (!glfwWindowShouldClose(window)) {
 		int width, height;

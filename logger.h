@@ -6,7 +6,7 @@
 #define LOG_WARN 1
 #define LOG_FATAL 0
 
-#define LOG_LEVEL LOG_DEBUG
+#define LOG_LEVEL LOG_INFO
 
 #define log_trace(fmt, ...) \
 	do { if (LOG_LEVEL >= LOG_TRACE) fprintf(stderr, "[TRACE] %s:%d:%s(): " fmt, __FILE__, \
