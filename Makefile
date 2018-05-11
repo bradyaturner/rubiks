@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS= -g -Wall
+CFLAGS= -g -Wall -Werror
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
@@ -19,7 +19,10 @@ $(APP): main.o rubiks.o cube.o vector.o utils.o quaternion.o
 test:	test.o singlecube.o cube.o vector.o utils.o quaternion.o
 	$(CC) $(FRAMEWORK) $(CFLAGS) -o $@ test.o singlecube.o cube.o vector.o utils.o quaternion.o $(LIBS)
 
-singlecube.o:	singlecube.c cube.h vector.h
+quat:	quattest.o vector.o utils.o quaternion.o logger.h
+	$(CC) $(FRAMEWORK) $(CFLAGS) -o $@ quattest.o vector.o utils.o quaternion.o $(LIBS)
+
+singlecube.o:	singlecube.c cube.h vector.h logger.h
 	$(CC) $(CFLAGS) -c singlecube.c
 
 rubiks.o:	rubiks.c cube.h vector.h utils.h logger.h
@@ -38,5 +41,5 @@ utils.o:	utils.c utils.h
 	$(CC) $(CFLAGS) -c utils.c
 
 clean:
-	rm -f $(APP) test
+	rm -f $(APP) test quat
 	rm -f *.o

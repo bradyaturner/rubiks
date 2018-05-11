@@ -24,7 +24,7 @@ Quaternion quatConjugate(Quaternion *quat);
 Quaternion quatInverse(Quaternion *quat);
 Quaternion quatNormalize(Quaternion *quat);
 Quaternion quatMultiply(Quaternion *left, Quaternion *right);
-Quaternion quatVecMultiply(Quaternion *left, Vec3f right);
+Vec3f quatVecMultiply(Quaternion *left, Vec3f right);
 Quaternion quatMultiplyNoNormal(Quaternion *left, Quaternion *right);
 float quatMagnitude(Quaternion *quat);
 Quaternion quatFromAxis(Vec3f axis, float angle);

@@ -8,16 +8,24 @@
 #include "cube.h"
 #include "vector.h"
 #include "quaternion.h"
+#include "logger.h"
 
-void display();
+// OpenGL/GLFW functions
 void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods);
-void resetDebugInfo();
-void resetCameraRotation();
-void drawAxisLines();
+void display();
 
+// Control functions
+void resetCameraRotation();
+void printHelpText();
+
+// Drawing functions
+void drawAxisLines();
+void drawCube(Cube cube, Vec3f coords);
+void drawNormalCube(const Cube cube, int useColor);
 void drawNormalSquare(int x, int y, int z);
-void drawNormalCube(Cube *cube, int useColor);
-void drawCube(Cube *cube, Vec3f coords);
+
+// Debug functions
+void resetDebugInfo();
 
 double rotate_y=0; 
 double rotate_x=0;
@@ -42,7 +50,7 @@ void display(){
 	glRotatef( rotate_y, 0.0, 1.0, 0.0 );
 
 	Vec3f pos = {0.0,0.0,0.0};
-	drawCube(&myCube, pos);
+	drawCube(myCube, pos);
 
 	drawAxisLines();
 	cubeDebugInfo = 0;
@@ -51,16 +59,33 @@ void display(){
 
 void drawAxisLines() {
 	glBegin(GL_LINES);
-	// x axis is RED
+	// -x axis is RED
 	glColor3f(1.0, 0.0, 0.0);
 	glVertex3f(0.0, 0.0, 0.0);
+	glVertex3f(-10.0, 0.0, 0.0);
+
+	// +x axis is ORANGE
+	glColor3f(1.0, 0.65, 0.0);
+	glVertex3f(0.0, 0.0, 0.0);
 	glVertex3f(10.0, 0.0, 0.0);
-	// y axis is GREEN
-	glColor3f(0.0, 1.0, 0.0);
+
+	// -y axis is YELLOW
+	glColor3f(1.0, 1.0, 0.0);
+	glVertex3f(0.0, 0.0, 0.0);
+	glVertex3f(0.0, -10.0, 0.0);
+
+	// -y axis is BLACK
+	glColor3f(0.0, 0.0, 0.0);
 	glVertex3f(0.0, 0.0, 0.0);
 	glVertex3f(0.0, 10.0, 0.0);
-	// z axis is BLUE
+
+	// -z axis is BLUE
 	glColor3f(0.0, 0.0, 1.0);
+	glVertex3f(0.0, 0.0, 0.0);
+	glVertex3f(0.0, 0.0, -10.0);
+
+	// z axis is GREEN
+	glColor3f(0.0, 1.0, 0.0);
 	glVertex3f(0.0, 0.0, 0.0);
 	glVertex3f(0.0, 0.0, 10.0);
 	glEnd();
@@ -68,7 +93,7 @@ void drawAxisLines() {
 
 void resetDebugInfo() {
 	cubeDebugInfo = 0;
-	printf("Cube at position: %i, quat: (%f, %f, %f, %f)\n",
+	log_debug("Cube at position: %i, quat: (%f, %f, %f, %f)\n",
 		myCube.position, myCube.quat.x, myCube.quat.y, myCube.quat.z, myCube.quat.w
 	);
 }
@@ -81,27 +106,29 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 	Vec3i ydeg = {5,0,0};
 	Vec3i xdeg = {0,5,0};
 	Vec3i zdeg = {0,0,5};
-	printf("Key pressed: %i\n", key);
+	log_debug("Key pressed: %i\n", key);
 	switch (key)
 	{
-		case 27:
-		case 81:
-		case 113:
+		case GLFW_KEY_ESCAPE:
+		case GLFW_KEY_Q:
 			glfwSetWindowShouldClose(window, 1);
 			break;
 		case GLFW_KEY_P:
 			resetDebugInfo();
 			break;
-		case GLFW_KEY_R:
-			rotateCube(&myCube, ydeg);
+		case GLFW_KEY_H:
+			printHelpText();
 			break;
 		case GLFW_KEY_T:
-			rotateCube(&myCube, xdeg);
+			rotateCube(&myCube, ydeg);
 			break;
 		case GLFW_KEY_Y:
+			rotateCube(&myCube, xdeg);
+			break;
+		case GLFW_KEY_U:
 			rotateCube(&myCube, zdeg);
 			break;
-		case GLFW_KEY_DELETE:
+		case GLFW_KEY_R:
 			resetRotation(&myCube);
 			break;
 		case 48:
@@ -110,54 +137,54 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		case GLFW_KEY_1:
 			if ( action == GLFW_PRESS) {
 				if (mods == 0) {
-					rotateF(&myCube, 1, 1); // top layer cw
+					rotateSingleCube(&myCube, LEFT_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rotateF(&myCube, 1, -1); // top layer ccw
+					rotateSingleCube(&myCube, LEFT_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_2:
 			if ( action == GLFW_PRESS) {
 				if (mods == 0) {
-					rotateF(&myCube, 2, 1); // bottom layer cw
+					rotateSingleCube(&myCube, RIGHT_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rotateF(&myCube, 2, -1); // bottom layer ccw
+					rotateSingleCube(&myCube, RIGHT_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_3:
 			if ( action == GLFW_PRESS) {
 				if (mods == 0) {
-					rotateF(&myCube, 5, 1); // front layer cw
+					rotateSingleCube(&myCube, BOTTOM_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rotateF(&myCube, 5, -1); // front layer ccw
+					rotateSingleCube(&myCube, BOTTOM_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_4:
 			if ( action == GLFW_PRESS) {
 				if (mods == 0) {
-					rotateF(&myCube, 6, 1); // 4 back layer cw
+					rotateSingleCube(&myCube, TOP_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rotateF(&myCube, 6, -1); // 4 back layer ccw
+					rotateSingleCube(&myCube, TOP_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_5:
 			if ( action == GLFW_PRESS) {
 				if (mods == 0) {
-					rotateF(&myCube, 4, 1); // 5 right layer cw
+					rotateSingleCube(&myCube, FRONT_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rotateF(&myCube, 4, -1); // 5 right layer ccw
+					rotateSingleCube(&myCube, FRONT_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_6:
 			if ( action == GLFW_PRESS) {
 				if (mods == 0) {
-					rotateF(&myCube, 3, 1); // 6 left layer cw
+					rotateSingleCube(&myCube, BACK_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rotateF(&myCube, 3, -1); // 6 left layer ccw
+					rotateSingleCube(&myCube, BACK_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
@@ -181,8 +208,33 @@ void resetCameraRotation() {
 	rotate_y = 0;
 }
 
+void printHelpText() {
+	printf("Controls:\n");
+
+	printf("\tGeneral:\n");
+	printf("\t\th: print this dialog\n");
+	printf("\t\tq/ESC: quit\n");
+	printf("\t\td: enable/disable debug mode\n");
+	printf("\t\tp: print debug info\n");
+
+	printf("\tCamera controls:\n");
+
+	printf("\t\t0: reset rotation\n");
+	printf("\t\tleft/right: rotate camera y-axis\n");
+	printf("\t\tup/down: rotate camera x-axis\n");
+
+	printf("\tRotation keys (key rotates clockwise, shift+key rotates ccw):\n");
+	printf("\t\tr: reset\n");
+	printf("\t\t1: left face\n");
+	printf("\t\t2: right face\n");
+	printf("\t\t3: bottom face\n");
+	printf("\t\t4: top face\n");
+	printf("\t\t5: back face\n");
+	printf("\t\t6: front face\n");
+}
+
 int main( int argc, char* argv[] ){
-	initializeCube(&myCube);
+	initializeCube(&myCube, 0, 0);
 
 	if (!glfwInit()) {
 		exit(EXIT_FAILURE);
@@ -190,7 +242,7 @@ int main( int argc, char* argv[] ){
 
 	window = glfwCreateWindow(640, 480, "Rubik's Cube", NULL, NULL);
 	if (!window) {
-		printf("Problem creating window!\n");
+		log_fatal("%s\n", "Problem creating window!");
 		exit(1);
 	}
 	glfwMakeContextCurrent(window);
@@ -199,6 +251,8 @@ int main( int argc, char* argv[] ){
 	glEnable(GL_DEPTH_TEST);
 	glfwSetKeyCallback(window, keyboardHandler);
 	glClearColor(0.85, 0.85, 0.85, 0.0);
+
+	logState(&myCube);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -213,34 +267,25 @@ int main( int argc, char* argv[] ){
     exit(EXIT_SUCCESS);
 }
 
-void drawCube(Cube *cube, Vec3f coords) {
+void drawCube(Cube cube, Vec3f coords) {
 	glPushMatrix();
-	if (cubeDebugInfo) {
-		printf("Drawing cube 0 with quaternion: {%f, %f, %f, %f}\n",
-			cube->quat.x,
-			cube->quat.y,
-			cube->quat.z,
-			cube->quat.w
-		);
-	}
-	glTranslatef(coords.x, coords.y, coords.z);
-	// glScalef( 2.0, 2.0, 0.0 ); use this instead of adding/subtracting halfWidth
 
-	// Rotate to draw cube
-	glMultMatrixf(quatToMatrix(&cube->quat));
+	glTranslatef(coords.x, coords.y, coords.z);
+	glScalef(cubeWidth, cubeWidth, cubeWidth);
+	glMultMatrixf(quatToMatrix(&cube.quat));
 
 	// Draw outline
 	glEnable(GL_POLYGON_OFFSET_LINE);
 	glPolygonOffset(-1,-1);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	glLineWidth((GLfloat)8);
+	glLineWidth((GLfloat)8); // this should be proportional to cube size
 	glColor3f(0.2, 0.2, 0.2); // line color
 	drawNormalCube(cube, 0);
 	glDisable(GL_POLYGON_OFFSET_LINE);
 
 	// Draw solid polygons
 	glEnable(GL_POLYGON_OFFSET_FILL);
-	glPolygonOffset(1,1);
+	glPolygonOffset(1,1); // just guessing on these values
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	drawNormalCube(cube, 1);
 	glDisable(GL_POLYGON_OFFSET_FILL);
@@ -248,58 +293,31 @@ void drawCube(Cube *cube, Vec3f coords) {
 	glPopMatrix();
 }
 
-void drawNormalSquare(int x, int y, int z) {
-	if (x != 0) {
-		glVertex3f(x*0.5, 0.5, 0.5);
-		glVertex3f(x*0.5, -0.5, 0.5);
-		glVertex3f(x*0.5, -0.5, -0.5);
-		glVertex3f(x*0.5, 0.5, -0.5);
-	} else if (y != 0) {
-		glVertex3f(0.5, y*0.5, 0.5);
-		glVertex3f(-0.5, y*0.5, 0.5);
-		glVertex3f(-0.5, y*0.5, -0.5);
-		glVertex3f(0.5, y*0.5, -0.5);
-	} else  {
-		glVertex3f(0.5, 0.5, z*0.5);
-		glVertex3f(0.5, -0.5, z*0.5);
-		glVertex3f(-0.5, -0.5, z*0.5);
-		glVertex3f(-0.5, 0.5, z*0.5);
-	}
+void drawNormalCube(const Cube cube, int useColor) {
+	GLfloat vertices[] =
+	{
+		-0.5, -0.5, -0.5,		-0.5, -0.5, 0.5,		-0.5, 0.5, 0.5,		-0.5, 0.5, -0.5, // left
+		0.5, -0.5, -0.5,		0.5, -0.5,  0.5,		0.5,  0.5, 0.5,		0.5,  0.5, -0.5, // right
+		-0.5, -0.5, -0.5,		-0.5, -0.5,  0.5,		0.5, -0.5, 0.5,		0.5, -0.5, -0.5, // bottom
+		-0.5,  0.5, -0.5,		-0.5,  0.5,  0.5,		0.5, 0.5, 0.5,		0.5,  0.5, -0.5, // top
+		-0.5, -0.5, -0.5,		-0.5,  0.5, -0.5,		0.5, 0.5, -0.5,		0.5, -0.5, -0.5, // front
+		-0.5, -0.5,  0.5,		-0.5,  0.5,  0.5,		0.5, 0.5, 0.5,		0.5, -0.5,  0.5  // back
+	};
+
+	float *colors = getColorArray(cube);
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+	if (useColor)
+		glEnableClientState(GL_COLOR_ARRAY);
+
+	glVertexPointer(3, GL_FLOAT, 0, vertices);
+
+	if (useColor)
+		glColorPointer(3, GL_FLOAT, 0, colors);
+
+	glDrawArrays(GL_QUADS, 0, 24);
+
+	glDisableClientState(GL_VERTEX_ARRAY);
+	if (useColor)
+		glDisableClientState(GL_COLOR_ARRAY);
 }
-
-// draws a 1x1x1 cube centered about the origin with no rotation
-void drawNormalCube(Cube *cube, int useColor) {
-	glBegin(GL_QUADS);
-
-	// top
-	if (useColor)
-		glColor3f(cube->top.color.red, cube->top.color.green, cube->top.color.blue);
-	drawNormalSquare(0,1,0);
-
-	// bottom
-	if (useColor)
-		glColor3f(cube->bottom.color.red, cube->bottom.color.green, cube->bottom.color.blue);
-	drawNormalSquare(0, -1, 0);
-
-	// left
-	if (useColor)
-		glColor3f(cube->left.color.red, cube->left.color.green, cube->left.color.blue);
-	drawNormalSquare(-1,0,0);
-
-	// right
-	if (useColor)
-		glColor3f(cube->right.color.red, cube->right.color.green, cube->right.color.blue);
-	drawNormalSquare(1,0,0);
-
-	// front
-	if (useColor)
-		glColor3f(cube->front.color.red, cube->front.color.green, cube->front.color.blue);
-	drawNormalSquare(0,0,-1);
-
-	// back
-	if (useColor)
-		glColor3f(cube->back.color.red, cube->back.color.green, cube->back.color.blue);
-	drawNormalSquare(0,0,1);
-	glEnd();
-}
-

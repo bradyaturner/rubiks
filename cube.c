@@ -37,12 +37,9 @@ void initializeCube(Cube *cube, int id, int position) {
 	cube->initialPosition = position;
 	quatInitIdentity(&cube->quat);
 
-	cube->faces[LEFT_FACE].color = (RGB3f){1.0, 0.0, 0.0}; // red
-	cube->faces[RIGHT_FACE].color = (RGB3f){1.0, 0.65, 0.0}; // orange
-	cube->faces[BOTTOM_FACE].color = (RGB3f){1.0, 1.0, 0.0}; // yellow
-	cube->faces[TOP_FACE].color = (RGB3f){1.0, 1.0, 1.0}; // white
-	cube->faces[FRONT_FACE].color = (RGB3f){0.0, 1.0, 0.0}; // green
-	cube->faces[BACK_FACE].color = (RGB3f){0.0, 0.0, 1.0}; // blue
+	for (int i=0; i<NUM_FACES; i++) {
+		cube->faces[i].color = faceData[i].rgb;
+	}
 }
 
 void resetCube(Cube *cube) {
@@ -55,4 +52,26 @@ void resetPosition(Cube *cube) {
 }
 void resetRotation(Cube *cube) {
 	quatInitIdentity(&cube->quat);
+}
+
+int isCubeInitPos(Cube *cube) {
+	return cube->position == cube->initialPosition;
+}
+
+int getShownFace(Cube *cube, int face) {
+	for(int i=0; i<NUM_FACES; i++) {
+		printf("\n\n");
+		log_info("cube quat: %f %f %f %f\n", cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);
+		Vec3f tmp2 = quatVecMultiply(&cube->quat, faceData[i].normal);
+
+		log_info("Vec for face:%c: before rotate  x:%f y:%f z:%f\n",
+			faceData[i].color, faceData[i].normal.x, faceData[i].normal.y, faceData[i].normal.z
+		);
+		log_info("Vec for face:%c: after rotate   x:%f y:%f z:%f\n", faceData[i].color, tmp2.x, tmp2.y, tmp2.z);
+		if (vec3fCompare(tmp2, faceData[face].normal)) {
+			log_info("***Cube face %c facing direction %c !\n", faceData[i].color, faceData[face].name);
+			return i;
+		}
+	}
+	return -1;
 }

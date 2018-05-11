@@ -34,8 +34,8 @@ void quatInitEuler(Quaternion *quat, Vec3f angles) {
 	float s3 = sin(bank/2);
 	float c1c2 = c1*c2;
 	float s1s2 = s1*s2;
-	quat->w = c1c2*c3 - s1s2*s3;
-	quat->x = c1c2*s3 + s1s2*c3;
+	quat->w = c1c2*c3 + s1s2*s3;
+	quat->x = c1c2*s3 - s1s2*c3;
 	quat->y = s1*c2*c3 + c1*s2*s3;
 	quat->z = c1*s2*c3 - s1*c2*s3;
 }
@@ -48,7 +48,7 @@ void quatInit(Quaternion *quat, float x, float y, float z, float w) {
 }
 
 Quaternion quatConjugate(Quaternion *quat) {
-	Quaternion tmp = {-quat->x, -quat->y, -quat->z, -quat->w};
+	Quaternion tmp = {-quat->x, -quat->y, -quat->z, quat->w};
 	return tmp;
 }
 
@@ -68,11 +68,14 @@ Quaternion quatMultiply(Quaternion *left, Quaternion *right) {
 	return quatNormalize(&tmp);
 }
 
-Quaternion quatVecMultiply(Quaternion *left, Vec3f right) {
+// Multiply vector by quaternion
+Vec3f quatVecMultiply(Quaternion *left, Vec3f right) {
 	Quaternion quatVec = {right.x, right.y, right.z, 0};
 	Quaternion inv = quatInverse(left);
-	Quaternion rhs = quatMultiplyNoNormal(&quatVec, &inv);
-	return quatMultiplyNoNormal(left, &rhs);
+	Quaternion rhs = quatMultiplyNoNormal(&inv, &quatVec);
+	Quaternion tmp = quatMultiplyNoNormal(&rhs, left);
+	Vec3f tmp2 = {tmp.x, tmp.y, tmp.z};
+	return tmp2;
 }
 
 Quaternion quatMultiplyNoNormal(Quaternion *left, Quaternion *right) {

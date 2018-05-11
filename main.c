@@ -21,6 +21,7 @@ void printHelpText();
 // Drawing functions
 void drawAxisLines();
 void drawRubiksCube();
+Vec3f determineCubeCoord(Cube *cube);
 void drawCube(Cube cube, Vec3f coords);
 void drawNormalCube(const Cube cube, int useColor);
 void drawNormalSquare(int x, int y, int z);
@@ -76,25 +77,45 @@ void drawAxisLines() {
 	glEnd();
 }
 
-void drawRubiksCube(){
+Vec3f determineCubeCoord(Cube *cube) {
 	// TODO there has to be a smarter way to do this math
+	int xPos, yPos, zPos;
+
+	if (cubeInFace(cube, LEFT_FACE)) {
+		xPos = -1;
+	} else if (cubeInFace(cube, RIGHT_FACE)) {
+		xPos = 1;
+	} else {
+		xPos = 0;
+	}
+
+	if (cubeInFace(cube, BOTTOM_FACE)) {
+		yPos = -1;
+	} else if (cubeInFace(cube, TOP_FACE)) {
+		yPos = 1;
+	} else {
+		yPos = 0;
+	}
+
+	if (cubeInFace(cube, FRONT_FACE)) {
+		zPos = -1;
+	} else if (cubeInFace(cube, BACK_FACE)) {
+		zPos = 1;
+	} else {
+		zPos = 0;
+	}
+	if (!printed) {
+		log_info("Drawing cube %i at postition: %i, offset=[ %i, %i, %i ]\n", cube->id, cube->position, xPos, yPos, zPos);
+	}
+
+	Vec3f cubeCoord = {xPos*cubeWidth, yPos*cubeWidth, zPos*cubeWidth};
+	return cubeCoord;
+}
+
+void drawRubiksCube(){
 	for(int i=0; i<NUM_CUBES; i++){
 		Cube *cube = findCube(&rubiksCube, i);
-		int position = cube->position + 1;
-		int yPos = (((position-1) / 9) - 1) * -1;
-		int xPos = (position % 3) == 0 ? 1 : (position%3)-2;
-		int zPos;
-		if ((position>=1 && position<=3) || (position>=10 && position<=12) || (position>=19 && position<=21)) {
-			zPos = -1;
-		} else if ((position>=4 && position<=6) || (position>=13 && position<=15) || (position>=22 && position<=24)) {
-			zPos = 0;
-		} else {
-			zPos = 1;
-		}
-		if (!printed) {
-			log_info("Drawing cube %i at postition: %i, offset=[ %i, %i, %i ]\n", cube->id, position-1, xPos, yPos, zPos);
-		}
-		Vec3f cubeCoord = {xPos*cubeWidth, yPos*cubeWidth, zPos*cubeWidth};
+		Vec3f cubeCoord = determineCubeCoord(cube);
 		drawCube(*cube, cubeCoord);
 	}
 	printed = 1;
@@ -107,6 +128,16 @@ void resetDebugInfo() {
 		log_info("Cube #%i at position: %i, quaternion: {%f, %f, %f, %f}\n",
 			i, cube->position, cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);
 	}
+	for (int i=0; i<NUM_FACES; i++) {
+		char faceStr[FACE_SIZE+1];
+		faceStr[FACE_SIZE] = '\0';
+		getFaceColors(&rubiksCube, i, faceStr);
+		printf("FACE: %c: %s\n", faceData[i].name, faceStr);
+	}
+	char rubiksStr[FACE_SIZE*NUM_FACES+1];
+	rubiksStr[FACE_SIZE*NUM_FACES] = '\0';
+	serializeRubiks(&rubiksCube, rubiksStr);
+	printf("RUBIKS: %s\n", rubiksStr);
 }
 
 void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -190,18 +221,18 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		case GLFW_KEY_5:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rotateCubeFace(&rubiksCube, FRONT_FACE, CLOCKWISE);
+					rotateCubeFace(&rubiksCube, BACK_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rotateCubeFace(&rubiksCube, FRONT_FACE, COUNTERCLOCKWISE);
+					rotateCubeFace(&rubiksCube, BACK_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_6:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rotateCubeFace(&rubiksCube, BACK_FACE, CLOCKWISE);
+					rotateCubeFace(&rubiksCube, FRONT_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rotateCubeFace(&rubiksCube, BACK_FACE, COUNTERCLOCKWISE);
+					rotateCubeFace(&rubiksCube, FRONT_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
@@ -246,7 +277,7 @@ int main( int argc, char* argv[] ){
 		exit(EXIT_FAILURE);
 	}
 
-	window = glfwCreateWindow(640, 480, "Rubik's Cube", NULL, NULL);
+	window = glfwCreateWindow(800, 800, "Rubik's Cube", NULL, NULL);
 	if (!window) {
 		log_fatal("%s\n","Problem creating window!");
 		exit(1);
@@ -260,10 +291,21 @@ int main( int argc, char* argv[] ){
 
 	printHelpText();
 
+	int printedSuccess = 0;
 	while (!glfwWindowShouldClose(window)) {
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
 		display();
+
+		if (!isRubiksSolved(&rubiksCube)) {
+			printedSuccess = 0;
+		} else {
+			if (!printedSuccess) {
+				printf("SOLVED!!!\n");
+				printedSuccess = 1;
+			}
+		}
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}

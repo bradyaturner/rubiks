@@ -1,63 +1,47 @@
 #include "singlecube.h"
 #include "utils.h"
+#include "logger.h"
 #include <stdio.h>
 
-const Vec3i topLayerDegrees = {0, 90, 0};
-const Vec3i bottomLayerDegrees = {0, -90, 0};
-const Vec3i frontLayerDegrees = {0, 0, 90};
-const Vec3i backLayerDegrees = {0, 0, -90};
-const Vec3i rightLayerDegrees = {90, 0, 0};
-const Vec3i leftLayerDegrees = {-90, 0, 0};
-
-void rotateVec(Cube *cube, const Vec3i degrees, int direction) {
-	Vec3i deg = degrees;
+void rotateFace(Cube *cube, int face, int direction) {
+	Vec3i deg = layerDegrees[face];
 	if (direction <0) {
 		deg = vectorMultiply(deg, -1);
 	}
 	rotateCube(cube, deg);
 }
 
-void rotateF(Cube *cube, int face, int direction) { // positive anything=cw, negative anything=ccw
-	switch(face)
-	{
-		case 1: // top -- rotation about y axis (cw is +deg)
-		{
-			printf("Rotating top layer %sclockwise\n", direction>=0 ? "" : "counter");
-			rotateVec(cube, topLayerDegrees, direction);
-			break;
+void rotateSingleCube(Cube *cube, int face, int direction) {
+	if (face >=0 && face < NUM_FACES) {
+		log_info("Rotating cube face %i:%c %sclockwise\n", face, faceNames[face], direction==CLOCKWISE ? "" : "counter");
+		rotateFace(cube, face, direction);
+	}
+	log_info("Cube quaternion: x:%f, y:%f, z:%f, w:%f\n", cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);
+	determineOrientation(cube);
+}
+
+void determineOrientation(Cube *cube) {
+	for(int i=0; i<NUM_FACES; i++) {
+		printf("\n\n");
+		log_info("cube quat: %f %f %f %f\n", cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);
+		Vec3f tmp2 = quatVecMultiply(&cube->quat, faceNormals[i]);
+
+		log_info("Vec for face:%c: before rotate  x:%f y:%f z:%f\n", faceColors[i], faceNormals[i].x, faceNormals[i].y, faceNormals[i].z);
+		log_info("Vec for face:%c: after rotate   x:%f y:%f z:%f\n", faceColors[i], tmp2.x, tmp2.y, tmp2.z);
+		for (int i2=0; i2<NUM_FACES; i2++) {
+//			log_info("***Comparing [%f, %f, %f] : [%f, %f, %f]\n", tmp2.x, tmp2.y, tmp2.z, faceNormals[i2].x, faceNormals[i2].y, faceNormals[i2].z);
+			if (vec3fCompare(tmp2, faceNormals[i2])) {
+				log_info("***Cube face %c facing direction %c !\n", faceColors[i], faceNames[i2]);
+			}
 		}
-		case 2: // bottom -- rotation about y axis
-			printf("Rotating bottom layer %sclockwise\n", direction>=0 ? "" : "counter");
-			rotateVec(cube, bottomLayerDegrees, direction);
-			break;
-		case 3: // left -- rotation about x axis
-			printf("Rotating left layer %sclockwise\n", direction>=0 ? "" : "counter");
-			rotateVec(cube, leftLayerDegrees, direction);
-			break;
-		case 4: // right -- rotation about x axis
-			printf("Rotating right layer %sclockwise\n", direction>=0 ? "" : "counter");
-			rotateVec(cube, rightLayerDegrees, direction);
-			break;
-		case 5: // front
-			printf("Rotating front layer %sclockwise\n", direction>=0 ? "" : "counter");
-			rotateVec(cube, frontLayerDegrees, direction);
-			break;
-		case 6: // back
-			printf("Rotating back layer %sclockwise\n", direction>=0 ? "" : "counter");
-			rotateVec(cube, backLayerDegrees, direction);
-			break;
-		default:
-			break;
 	}
 }
 
-void initializeCube(Cube *cube) {
-	cube->position = 0;
-	quatInitIdentity(&cube->quat);
-	cube->top.color = (RGB3f){1.0, 1.0, 1.0}; // white
-	cube->bottom.color = (RGB3f){1.0, 1.0, 0.0}; // yellow
-	cube->left.color = (RGB3f){1.0, 0.0, 0.0}; // red
-	cube->right.color = (RGB3f){1.0, 0.65, 0.0}; // orange
-	cube->front.color = (RGB3f){0.0, 1.0, 0.0}; // green
-	cube->back.color = (RGB3f){0.0, 0.0, 1.0}; // blue
+void logState(Cube *cube) {
+	log_info("%s\n", "CURRENT STATE:");
+	for(int i=0; i<NUM_FACES; i++) {
+		Vec3f tmp2 = quatVecMultiply(&cube->quat, faceNormals[i]);
+		log_info("Vec for face:%c: (unmodified)  x:%f y:%f z:%f\n", faceColors[i], faceNormals[i].x, faceNormals[i].y, faceNormals[i].z);
+		log_info("Vec for face:%c: (*quat)       x:%f y:%f z:%f\n\n\n", faceColors[i], tmp2.x, tmp2.y, tmp2.z);
+	}
 }

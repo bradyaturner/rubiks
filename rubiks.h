@@ -8,14 +8,13 @@
 #define COUNTERCLOCKWISE -1
 
 #define FACE_SIZE 9
-#define NUM_FACES 6
 #define NUM_CUBES 27
 
 typedef struct {
 	Cube cubes[NUM_CUBES];
 } Rubiks;
 
-static const int rotation[FACE_SIZE] = {2, 5, 8, 1, 4, 7, 0, 3, 6}; // to rotate ccw flip layer and rotation values
+static const int rotation[FACE_SIZE] = {6, 3, 0, 7, 4, 1, 8, 5, 2}; // to rotate ccw flip layer and rotation values
 
 static const int layers[NUM_FACES][FACE_SIZE] =
 {
@@ -27,23 +26,17 @@ static const int layers[NUM_FACES][FACE_SIZE] =
 	{2, 1, 0, 11, 10, 9, 20, 19, 18}
 };
 
-static const Vec3i layerDegrees[NUM_FACES] =
-{
-	{90, 0, 0},
-	{-90, 0, 0},
-	{0, 90, 0},
-	{0, -90, 0},
-	{0, 0, -90},
-	{0, 0, 90}
-};
-
 void initializeRubiks(Rubiks *rubiks);
 void rotateCubeFace(Rubiks *rubiks, int face, int direction);
 Cube* findCube(Rubiks *rubiks, int cubePosition);
 void rotateLayer(Rubiks *rubiks, int face, int direction);
 void translateLayer(Rubiks *rubiks, const int layer[], const int translation[]);
 int getFace(Rubiks *rubiks, int face, Cube* cubes[]);
+int serializeRubiks(Rubiks *rubiks, char* out);
+int getFaceColors(Rubiks *rubiks, int face, char* colors);
 void shuffle(Rubiks *rubiks, int times);
 void reset(Rubiks *rubiks);
+int isRubiksSolved(Rubiks *rubiks);
+int cubeInFace(Cube *cube, int face);
 
 #endif
