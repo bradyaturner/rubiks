@@ -148,54 +148,54 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		case GLFW_KEY_1:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rotateCubeFace(&rubiksCube, 1, 1);
+					rotateCubeFace(&rubiksCube, LEFT_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rotateCubeFace(&rubiksCube, 1, -1);
+					rotateCubeFace(&rubiksCube, LEFT_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_2:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rotateCubeFace(&rubiksCube, 2, 1);
+					rotateCubeFace(&rubiksCube, RIGHT_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rotateCubeFace(&rubiksCube, 2, -1);
+					rotateCubeFace(&rubiksCube, RIGHT_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_3:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rotateCubeFace(&rubiksCube, 3, 1);
+					rotateCubeFace(&rubiksCube, BOTTOM_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rotateCubeFace(&rubiksCube, 3, -1);
+					rotateCubeFace(&rubiksCube, BOTTOM_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_4:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rotateCubeFace(&rubiksCube, 4, 1);
+					rotateCubeFace(&rubiksCube, TOP_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rotateCubeFace(&rubiksCube, 4, -1);
+					rotateCubeFace(&rubiksCube, TOP_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_5:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rotateCubeFace(&rubiksCube, 5, 1);
+					rotateCubeFace(&rubiksCube, FRONT_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rotateCubeFace(&rubiksCube, 5, -1);
+					rotateCubeFace(&rubiksCube, FRONT_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_6:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rotateCubeFace(&rubiksCube, 6, 1);
+					rotateCubeFace(&rubiksCube, BACK_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rotateCubeFace(&rubiksCube, 6, -1);
+					rotateCubeFace(&rubiksCube, BACK_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;

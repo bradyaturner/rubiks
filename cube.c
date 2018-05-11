@@ -26,9 +26,9 @@ float* getColorArray(const Cube cube) {
 
 	for (int i=0; i<NUM_FACES; i++) {
 		for (int v=0; v<4; v++) {
-			colors[i*12 + v*3] = cube.faces[i]->color.red;
-			colors[i*12 + v*3 + 1] = cube.faces[i]->color.green;
-			colors[i*12 + v*3 + 2] = cube.faces[i]->color.blue;
+			colors[i*12 + v*3] = cube.faces[i].color.red;
+			colors[i*12 + v*3 + 1] = cube.faces[i].color.green;
+			colors[i*12 + v*3 + 2] = cube.faces[i].color.blue;
 		}
 	}
 	return colors;
@@ -38,17 +38,11 @@ void initializeCube(Cube *cube, int id, int position) {
 		cube->id = id;
 		cube->position = position;
 		quatInitIdentity(&cube->quat);
-		cube->top.color = (RGB3f){1.0, 1.0, 1.0}; // white
-		cube->bottom.color = (RGB3f){1.0, 1.0, 0.0}; // yellow
-		cube->left.color = (RGB3f){1.0, 0.0, 0.0}; // red
-		cube->right.color = (RGB3f){1.0, 0.65, 0.0}; // orange
-		cube->front.color = (RGB3f){0.0, 1.0, 0.0}; // green
-		cube->back.color = (RGB3f){0.0, 0.0, 1.0}; // blue
 
-		cube->faces[0] = &cube->left;
-		cube->faces[1] = &cube->right;
-		cube->faces[2] = &cube->bottom;
-		cube->faces[3] = &cube->top;
-		cube->faces[4] = &cube->front;
-		cube->faces[5] = &cube->back;
+		cube->faces[LEFT_FACE].color = (RGB3f){1.0, 0.0, 0.0}; // red
+		cube->faces[RIGHT_FACE].color = (RGB3f){1.0, 0.65, 0.0}; // orange
+		cube->faces[BOTTOM_FACE].color = (RGB3f){1.0, 1.0, 0.0}; // yellow
+		cube->faces[TOP_FACE].color = (RGB3f){1.0, 1.0, 1.0}; // white
+		cube->faces[FRONT_FACE].color = (RGB3f){0.0, 1.0, 0.0}; // green
+		cube->faces[BACK_FACE].color = (RGB3f){0.0, 0.0, 1.0}; // blue
 }
