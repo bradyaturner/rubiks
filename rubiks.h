@@ -35,8 +35,9 @@ static const Vec3i layerDegrees[6] =
 
 void initializeRubiks(Rubiks *rubiks);
 void rotateCubeFace(Rubiks *rubiks, int face, int direction);
-int findCube(Rubiks *rubiks, int cubePosition);
-void rotateLayer(Rubiks *rubiks, const int layer[], const Vec3i degrees, int direction);
+Cube* findCube(Rubiks *rubiks, int cubePosition);
+void rotateLayer(Rubiks *rubiks, int face, int direction);
 void translateLayer(Rubiks *rubiks, const int layer[], const int translation[]);
+int getFace(Rubiks *rubiks, int face, Cube* cubes[]);
 
 #endif

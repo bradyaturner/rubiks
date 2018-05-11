@@ -3,75 +3,85 @@
 #include "logger.h"
 #include <stdio.h>
 
-void rotateLayer(Rubiks *rubiks, const int layer[], const Vec3i degrees, int direction) {
+void rotateLayer(Rubiks *rubiks, int face, int direction) {
 	log_info("rotateLayer: [%i, %i, %i, %i, %i, %i, %i, %i, %i] -> {%i, %i, %i} direction: %sclockwise\n",
-		layer[0], layer[1], layer[2], layer[3], layer[4], layer[5], layer[6], layer[7], layer[8],
-		degrees.x, degrees.y, degrees.z, direction==CLOCKWISE ? "":"counter"
+		layers[face][0], layers[face][1], layers[face][2], layers[face][3], layers[face][4], layers[face][5], layers[face][6], layers[face][7], layers[face][8],
+		layerDegrees[face].x, layerDegrees[face].y, layerDegrees[face].z, direction==CLOCKWISE ? "":"counter"
 	);
-	int indices[9];
-	for (int i=0; i<9; i++) {
-		log_trace("Looking for cube at position = %i", layer[i]);
-		indices[i] = findCube(rubiks, layer[i]);
-		log_trace("\tFound cube index: %i\n", indices[i]);
-	}
+	Cube* cubes[9];
+	getFace(rubiks, face, cubes);
 	int newPositions[9];
 	for (int i=0; i<9; i++) {
-		log_debug("Determining new position for cube at position %i == layer[%i]=%i\n",
-			rubiks->cubes[indices[i]].position,
-			i, layer[i]);
+		log_debug("Determining new position for cube at position %i == layers[%i][%i]=%i\n",
+			cubes[i]->position,
+			face, i, layers[face][i]);
 
-			int index = indexOf(rotation, 9, i); // the cube in this face position gets rotated to this new face position
-			newPositions[i] = layer[index]; // the new position is the cube at that index in the layer (layer values ARE positions)
+			int index = indexOf(rotation, 9, i);
+			newPositions[i] = layers[face][index];
 	}
 
-	Vec3i deg = degrees;
+	Vec3i deg = layerDegrees[face];
 	if (direction == CLOCKWISE) {
-		translateLayer(rubiks, layer, newPositions);
+		translateLayer(rubiks, layers[face], newPositions);
 	} else {
-		translateLayer(rubiks, newPositions, layer);
+		translateLayer(rubiks, newPositions, layers[face]);
 		deg = vectorMultiply(deg, -1);
 	}
 	for (int i=0; i<9; i++) {
-		rotateCube(&rubiks->cubes[indices[i]], deg);
+		rotateCube(cubes[i], deg);
 	}
 }
 
 void translateLayer(Rubiks *rubiks, const int layer[], const int translation[]) {
-	int indices[9];
+	Cube* cubes[9];
 	for (int i=0; i<9; i++) {
-		indices[i] = findCube(rubiks, layer[i]);
+		cubes[i] = findCube(rubiks, layer[i]);
 	}
 
 	for (int i=0; i<9; i++) {
 		log_debug("Rotating cube w/ ID=%i at position %i to position %i\n",
-			rubiks->cubes[indices[i]].id,
-			rubiks->cubes[indices[i]].position,
+			cubes[i]->id,
+			cubes[i]->position,
 			translation[i]
 		);
-		rubiks->cubes[indices[i]].position = translation[i];
+		cubes[i]->position = translation[i];
 	}
 }
 
-void rotateCubeFace(Rubiks *rubiks, int face, int direction) { // positive anything=cw, negative anything=ccw
+void rotateCubeFace(Rubiks *rubiks, int face, int direction) {
 	if (face >=0 && face < NUM_FACES) {
 		log_info("Rotating face %i %sclockwise\n", face, direction==CLOCKWISE ? "" : "counter");
-		rotateLayer(rubiks, layers[face], layerDegrees[face], direction);
+		rotateLayer(rubiks, face, direction);
 	}
 }
 
-int findCube(Rubiks *rubiks, int cubePosition) {
-	int foundIndex = -1;
+Cube* findCube(Rubiks *rubiks, int cubePosition) {
+	Cube* cube = NULL;
 	for (int i=0; i<27; i++) {
 		if (rubiks->cubes[i].position == cubePosition) {
-			foundIndex = i;
+			cube = &rubiks->cubes[i];
 			break;
 		}
 	}
-	return foundIndex;
+	return cube;
 }
 
 void initializeRubiks(Rubiks *rubiks) {
 	for (int i = 0; i<27; i++) {
 		initializeCube(&rubiks->cubes[i], i, i);
 	}
+}
+
+int getFace(Rubiks *rubiks, int face, Cube* cubes[]) {
+	for (int i=0; i<9; i++) {
+		int pos = layers[face][i];
+		log_trace("Looking for cube at position = %i", pos);
+		cubes[i] = findCube(rubiks, pos);
+		if (cubes[i] == NULL) {
+			log_fatal("No cube found at position %i in face %i\n", pos, face);
+			return -1;
+		}
+		log_trace("Found cube with ID: %i\n", cubes[i]->id);
+	}
+	return 1;
 }

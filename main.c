@@ -79,8 +79,7 @@ void drawAxisLines() {
 void drawRubiksCube(){
 	// TODO there has to be a smarter way to do this math
 	for(int i=0; i<27; i++){
-		int index = findCube(&rubiksCube, i);
-		Cube *cube = &rubiksCube.cubes[index];
+		Cube *cube = findCube(&rubiksCube, i);
 		int position = cube->position + 1;
 		int yPos = (((position-1) / 9) - 1) * -1;
 		int xPos = (position % 3) == 0 ? 1 : (position%3)-2;
@@ -93,12 +92,10 @@ void drawRubiksCube(){
 			zPos = 1;
 		}
 		if (!printed) {
-			log_info("Drawing cube %i at postition: %i, offset=[ %i, %i, %i ]\n", index, position-1, xPos, yPos, zPos);
+			log_info("Drawing cube %i at postition: %i, offset=[ %i, %i, %i ]\n", cube->id, position-1, xPos, yPos, zPos);
 		}
 		Vec3f cubeCoord = {xPos*cubeWidth, yPos*cubeWidth, zPos*cubeWidth};
-
-		int cubeNum = findCube(&rubiksCube, i);
-		drawCube(rubiksCube.cubes[cubeNum], cubeCoord);
+		drawCube(*cube, cubeCoord);
 	}
 	printed = 1;
 }
