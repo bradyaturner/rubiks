@@ -1,21 +1,22 @@
 #include "rubiks.h"
 #include "utils.h"
+#include "logger.h"
 #include <stdio.h>
 
 void rotateLayer(Rubiks *rubiks, const int layer[], const Vec3i degrees, int direction) {
-	printf("rotateLayer: [%i, %i, %i, %i, %i, %i, %i, %i, %i] -> {%i, %i, %i} direction: %sclockwise\n",
+	log_info("rotateLayer: [%i, %i, %i, %i, %i, %i, %i, %i, %i] -> {%i, %i, %i} direction: %sclockwise\n",
 		layer[0], layer[1], layer[2], layer[3], layer[4], layer[5], layer[6], layer[7], layer[8],
 		degrees.x, degrees.y, degrees.z, direction==CLOCKWISE ? "":"counter"
 	);
 	int indices[9];
 	for (int i=0; i<9; i++) {
-		printf("Looking for cube at position = %i", layer[i]);
+		log_trace("Looking for cube at position = %i", layer[i]);
 		indices[i] = findCube(rubiks, layer[i]);
-		printf("\tFound cube index: %i\n", indices[i]);
+		log_trace("\tFound cube index: %i\n", indices[i]);
 	}
 	int newPositions[9];
 	for (int i=0; i<9; i++) {
-		printf("Determining new position for cube at position %i == layer[%i]=%i\n",
+		log_debug("Determining new position for cube at position %i == layer[%i]=%i\n",
 			rubiks->cubes[indices[i]].position,
 			i, layer[i]);
 
@@ -42,7 +43,7 @@ void translateLayer(Rubiks *rubiks, const int layer[], const int translation[]) 
 	}
 
 	for (int i=0; i<9; i++) {
-		printf("Rotating cube w/ ID=%i at position %i to position %i\n",
+		log_debug("Rotating cube w/ ID=%i at position %i to position %i\n",
 			rubiks->cubes[indices[i]].id,
 			rubiks->cubes[indices[i]].position,
 			translation[i]
@@ -53,7 +54,7 @@ void translateLayer(Rubiks *rubiks, const int layer[], const int translation[]) 
 
 void rotateCubeFace(Rubiks *rubiks, int face, int direction) { // positive anything=cw, negative anything=ccw
 	if (face >=0 && face < NUM_FACES) {
-		printf("Rotating face %i %sclockwise\n", face, direction==CLOCKWISE ? "" : "counter");
+		log_info("Rotating face %i %sclockwise\n", face, direction==CLOCKWISE ? "" : "counter");
 		rotateLayer(rubiks, layers[face], layerDegrees[face], direction);
 	}
 }

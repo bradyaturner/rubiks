@@ -22,7 +22,7 @@ test:	test.o singlecube.o cube.o vector.o utils.o quaternion.o
 singlecube.o:	singlecube.c cube.h vector.h
 	$(CC) $(CFLAGS) -c singlecube.c
 
-rubiks.o:	rubiks.c cube.h vector.h utils.h
+rubiks.o:	rubiks.c cube.h vector.h utils.h logger.h
 	$(CC) $(CFLAGS) -c rubiks.c
 
 cube.o:	cube.c cube.h vector.h utils.h

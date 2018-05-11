@@ -8,6 +8,7 @@
 #include "cube.h"
 #include "vector.h"
 #include "quaternion.h"
+#include "logger.h"
 
 // OpenGL/GLFW functions
 void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -34,7 +35,7 @@ double cubeWidth = 0.3;
 GLFWwindow *window;
 
 Rubiks rubiksCube;
-int printed = 0;
+int printed = 1;
 int debug = 0;
 const Vec3i origin = {0, 0, 0};
 
@@ -92,7 +93,7 @@ void drawRubiksCube(){
 			zPos = 1;
 		}
 		if (!printed) {
-			printf("Drawing cube %i at postition: %i, offset=[ %i, %i, %i ]\n", index, position-1, xPos, yPos, zPos);
+			log_info("Drawing cube %i at postition: %i, offset=[ %i, %i, %i ]\n", index, position-1, xPos, yPos, zPos);
 		}
 		Vec3f cubeCoord = {xPos*cubeWidth, yPos*cubeWidth, zPos*cubeWidth};
 
@@ -106,7 +107,7 @@ void resetDebugInfo() {
 	printed = 0;
 	for (int i=0; i<27; i++) {
 		Cube* cube = &rubiksCube.cubes[i];
-		printf("Cube #%i at position: %i, quaternion: {%f, %f, %f, %f}\n",
+		log_info("Cube #%i at position: %i, quaternion: {%f, %f, %f, %f}\n",
 			i, cube->position, cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);
 	}
 }
@@ -116,7 +117,7 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		return;
 	}
 
-	printf("Key pressed: %i\n", key);
+	log_debug("Key pressed: %i\n", key);
 	switch (key)
 	{
 		case 27:
@@ -216,7 +217,7 @@ int main( int argc, char* argv[] ){
 
 	window = glfwCreateWindow(640, 480, "Rubik's Cube", NULL, NULL);
 	if (!window) {
-		printf("Problem creating window!\n");
+		log_fatal("%s\n","Problem creating window!");
 		exit(1);
 	}
 	glfwMakeContextCurrent(window);
