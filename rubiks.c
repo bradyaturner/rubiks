@@ -9,15 +9,15 @@ void rotateLayer(Rubiks *rubiks, int face, int direction) {
 		layers[face][0], layers[face][1], layers[face][2], layers[face][3], layers[face][4], layers[face][5], layers[face][6], layers[face][7], layers[face][8],
 		layerDegrees[face].x, layerDegrees[face].y, layerDegrees[face].z, direction==CLOCKWISE ? "":"counter"
 	);
-	Cube* cubes[9];
+	Cube* cubes[FACE_SIZE];
 	getFace(rubiks, face, cubes);
-	int newPositions[9];
+	int newPositions[FACE_SIZE];
 	for (int i=0; i<9; i++) {
 		log_debug("Determining new position for cube at position %i == layers[%i][%i]=%i\n",
 			cubes[i]->position,
 			face, i, layers[face][i]);
 
-			int index = indexOf(rotation, 9, i);
+			int index = indexOf(rotation, FACE_SIZE, i);
 			newPositions[i] = layers[face][index];
 	}
 
@@ -28,18 +28,18 @@ void rotateLayer(Rubiks *rubiks, int face, int direction) {
 		translateLayer(rubiks, newPositions, layers[face]);
 		deg = vectorMultiply(deg, -1);
 	}
-	for (int i=0; i<9; i++) {
+	for (int i=0; i<FACE_SIZE; i++) {
 		rotateCube(cubes[i], deg);
 	}
 }
 
 void translateLayer(Rubiks *rubiks, const int layer[], const int translation[]) {
-	Cube* cubes[9];
-	for (int i=0; i<9; i++) {
+	Cube* cubes[FACE_SIZE];
+	for (int i=0; i<FACE_SIZE; i++) {
 		cubes[i] = findCube(rubiks, layer[i]);
 	}
 
-	for (int i=0; i<9; i++) {
+	for (int i=0; i<FACE_SIZE; i++) {
 		log_debug("Rotating cube w/ ID=%i at position %i to position %i\n",
 			cubes[i]->id,
 			cubes[i]->position,
@@ -58,7 +58,7 @@ void rotateCubeFace(Rubiks *rubiks, int face, int direction) {
 
 Cube* findCube(Rubiks *rubiks, int cubePosition) {
 	Cube* cube = NULL;
-	for (int i=0; i<27; i++) {
+	for (int i=0; i<NUM_CUBES; i++) {
 		if (rubiks->cubes[i].position == cubePosition) {
 			cube = &rubiks->cubes[i];
 			break;
@@ -68,13 +68,13 @@ Cube* findCube(Rubiks *rubiks, int cubePosition) {
 }
 
 void initializeRubiks(Rubiks *rubiks) {
-	for (int i = 0; i<27; i++) {
+	for (int i = 0; i<NUM_CUBES; i++) {
 		initializeCube(&rubiks->cubes[i], i, i);
 	}
 }
 
 int getFace(Rubiks *rubiks, int face, Cube* cubes[]) {
-	for (int i=0; i<9; i++) {
+	for (int i=0; i<FACE_SIZE; i++) {
 		int pos = layers[face][i];
 		log_trace("Looking for cube at position = %i", pos);
 		cubes[i] = findCube(rubiks, pos);
@@ -94,7 +94,7 @@ void shuffle(Rubiks *rubiks, int times) {
 }
 
 void reset(Rubiks *rubiks) {
-	for (int i = 0; i<27; i++) {
+	for (int i = 0; i<NUM_CUBES; i++) {
 		resetCube(&rubiks->cubes[i]);
 	}
 }

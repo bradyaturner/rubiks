@@ -7,13 +7,17 @@
 #define CLOCKWISE 1
 #define COUNTERCLOCKWISE -1
 
+#define FACE_SIZE 9
+#define NUM_FACES 6
+#define NUM_CUBES 27
+
 typedef struct {
-	Cube cubes[27];
+	Cube cubes[NUM_CUBES];
 } Rubiks;
 
-static const int rotation[9] = {2, 5, 8, 1, 4, 7, 0, 3, 6}; // to rotate ccw flip layer and rotation values
+static const int rotation[FACE_SIZE] = {2, 5, 8, 1, 4, 7, 0, 3, 6}; // to rotate ccw flip layer and rotation values
 
-static const int layers[6][9] =
+static const int layers[NUM_FACES][FACE_SIZE] =
 {
 	{0, 3, 6, 9, 12, 15, 18, 21, 24},
 	{8, 5, 2, 17, 14, 11, 26, 23, 20},
@@ -23,7 +27,7 @@ static const int layers[6][9] =
 	{2, 1, 0, 11, 10, 9, 20, 19, 18}
 };
 
-static const Vec3i layerDegrees[6] =
+static const Vec3i layerDegrees[NUM_FACES] =
 {
 	{90, 0, 0},
 	{-90, 0, 0},

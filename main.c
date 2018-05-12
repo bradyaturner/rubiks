@@ -38,7 +38,6 @@ GLFWwindow *window;
 Rubiks rubiksCube;
 int printed = 1;
 int debug = 0;
-const Vec3i origin = {0, 0, 0};
 
 void display(){
 
@@ -79,7 +78,7 @@ void drawAxisLines() {
 
 void drawRubiksCube(){
 	// TODO there has to be a smarter way to do this math
-	for(int i=0; i<27; i++){
+	for(int i=0; i<NUM_CUBES; i++){
 		Cube *cube = findCube(&rubiksCube, i);
 		int position = cube->position + 1;
 		int yPos = (((position-1) / 9) - 1) * -1;
@@ -103,7 +102,7 @@ void drawRubiksCube(){
 
 void resetDebugInfo() {
 	printed = 0;
-	for (int i=0; i<27; i++) {
+	for (int i=0; i<NUM_CUBES; i++) {
 		Cube* cube = &rubiksCube.cubes[i];
 		log_info("Cube #%i at position: %i, quaternion: {%f, %f, %f, %f}\n",
 			i, cube->position, cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);

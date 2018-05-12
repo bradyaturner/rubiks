@@ -13,7 +13,7 @@
 #define FRONT_FACE 4
 #define BACK_FACE 5
 
-typedef struct cubeFace {
+typedef struct {
 	RGB3f color;
 } CubeFace;
 
