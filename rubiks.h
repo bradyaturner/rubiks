@@ -39,5 +39,7 @@ Cube* findCube(Rubiks *rubiks, int cubePosition);
 void rotateLayer(Rubiks *rubiks, int face, int direction);
 void translateLayer(Rubiks *rubiks, const int layer[], const int translation[]);
 int getFace(Rubiks *rubiks, int face, Cube* cubes[]);
+void shuffle(Rubiks *rubiks, int times);
+void reset(Rubiks *rubiks);
 
 #endif

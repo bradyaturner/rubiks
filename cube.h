@@ -21,12 +21,15 @@ typedef struct {
 	CubeFace faces[NUM_FACES];
 	int id;
 	int position;
+	int initialPosition;
 	Quaternion quat;
 } Cube;
 
 void initializeCube(Cube *cube, int id, int position);
+void resetCube(Cube *cube);
 void rotateCube(Cube *cube, const Vec3i degrees);
 void resetRotation(Cube *cube);
+void resetPosition(Cube *cube);
 float* getColorArray(const Cube cube);
 
 #endif

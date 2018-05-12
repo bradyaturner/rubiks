@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "logger.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 void rotateLayer(Rubiks *rubiks, int face, int direction) {
 	log_info("rotateLayer: [%i, %i, %i, %i, %i, %i, %i, %i, %i] -> {%i, %i, %i} direction: %sclockwise\n",
@@ -84,4 +85,16 @@ int getFace(Rubiks *rubiks, int face, Cube* cubes[]) {
 		log_trace("Found cube with ID: %i\n", cubes[i]->id);
 	}
 	return 1;
+}
+
+void shuffle(Rubiks *rubiks, int times) {
+	for (int i=0; i<times; i++) {
+		rotateLayer(rubiks, rand()%NUM_FACES, rand()%2==0 ? 1:-1);
+	}
+}
+
+void reset(Rubiks *rubiks) {
+	for (int i = 0; i<27; i++) {
+		resetCube(&rubiks->cubes[i]);
+	}
 }

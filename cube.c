@@ -18,10 +18,6 @@ void rotateCube(Cube *cube, const Vec3i degrees) {
 	log_trace("[CUBEID: %i] Cube quaternion after: %f, %f, %f, %f...\n", cube->id, cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);
 }
 
-void resetRotation(Cube *cube) {
-	quatInitIdentity(&cube->quat);
-}
-
 float* getColorArray(const Cube cube) {
 	static float colors[72];
 
@@ -38,6 +34,7 @@ float* getColorArray(const Cube cube) {
 void initializeCube(Cube *cube, int id, int position) {
 	cube->id = id;
 	cube->position = position;
+	cube->initialPosition = position;
 	quatInitIdentity(&cube->quat);
 
 	cube->faces[LEFT_FACE].color = (RGB3f){1.0, 0.0, 0.0}; // red
@@ -46,4 +43,16 @@ void initializeCube(Cube *cube, int id, int position) {
 	cube->faces[TOP_FACE].color = (RGB3f){1.0, 1.0, 1.0}; // white
 	cube->faces[FRONT_FACE].color = (RGB3f){0.0, 1.0, 0.0}; // green
 	cube->faces[BACK_FACE].color = (RGB3f){0.0, 0.0, 1.0}; // blue
+}
+
+void resetCube(Cube *cube) {
+	resetPosition(cube);
+	resetRotation(cube);
+}
+
+void resetPosition(Cube *cube) {
+	cube->position = cube->initialPosition;
+}
+void resetRotation(Cube *cube) {
+	quatInitIdentity(&cube->quat);
 }

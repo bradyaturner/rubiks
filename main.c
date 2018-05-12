@@ -122,6 +122,12 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		case GLFW_KEY_Q:
 			glfwSetWindowShouldClose(window, 1);
 			break;
+		case GLFW_KEY_S:
+			shuffle(&rubiksCube, 20);
+			break;
+		case GLFW_KEY_R:
+			reset(&rubiksCube);
+			break;
 		case GLFW_KEY_H:
 			printHelpText();
 			break;
@@ -224,6 +230,8 @@ void printHelpText() {
 	printf("\t\tup/down: rotate camera x-axis\n");
 
 	printf("\tRotation keys (key rotates clockwise, shift+key rotates ccw):\n");
+	printf("\t\ts: shuffle\n");
+	printf("\t\tr: reset\n");
 	printf("\t\t1: left face\n");
 	printf("\t\t2: right face\n");
 	printf("\t\t3: bottom face\n");
