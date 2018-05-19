@@ -34,7 +34,7 @@ cube.o:	cube.c cube.h vector.h utils.h
 quaternion.o:	quaternion.c quaternion.h vector.h
 	$(CC) $(CFLAGS) -c quaternion.c
 
-vector.o:	vector.c vector.h
+vector.o:	vector.c vector.h utils.h
 	$(CC) $(CFLAGS) -c vector.c
 
 utils.o:	utils.c utils.h

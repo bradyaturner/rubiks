@@ -8,5 +8,6 @@ typedef struct {
 } RGB3f;
 
 int indexOf(const int arr[], const int size, const int element);
+int nearlyEqualF(float a, float b);
 
 #endif
