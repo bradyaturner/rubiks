@@ -10,6 +10,8 @@
 #include "quaternion.h"
 #include "logger.h"
 
+#define ROTATION_SPEED 5
+
 // OpenGL/GLFW functions
 void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods);
 void display();
@@ -25,6 +27,9 @@ Vec3f determineCubeCoord(Cube *cube);
 void drawCube(Cube cube, Vec3f coords);
 void drawNormalCube(const Cube cube, int useColor);
 void drawNormalSquare(int x, int y, int z);
+void beginLayerRotation(int layer, int direction);
+void updateLayerRotations(void);
+void getLayerRotation(Cube *cube);
 
 // Debug functions
 void resetDebugInfo();
@@ -40,6 +45,10 @@ Rubiks rubiksCube;
 int printed = 1;
 int debug = 0;
 
+// Keep track of animation of rotated layers
+int layerRotationDegrees[NUM_FACES] = {0, 0, 0, 0, 0, 0};
+int layerRotationDirection[NUM_FACES] = {0, 0, 0, 0, 0, 0};
+
 void display(){
 
 	//  Clear screen and Z-buffer
@@ -52,12 +61,51 @@ void display(){
 	glRotatef( rotate_x, 1.0, 0.0, 0.0 );
 	glRotatef( rotate_y, 0.0, 1.0, 0.0 );
 
+	updateLayerRotations();
 	drawRubiksCube();
 	if (debug) {
 		drawAxisLines();
 	}
 
 	glFlush();
+}
+
+void beginLayerRotation(int layer, int direction) {
+	log_info("Begin layer rotation: layer: %i, direction: %i\n", layer, direction);
+	if (direction != CLOCKWISE && direction != COUNTERCLOCKWISE) {
+		log_error("Invalid direction %i for layer %i\n", direction, layer);
+		return;
+	}
+	if (layer >= NUM_FACES || layer < 0) {
+		log_error("Invalid layer to rotate: %i\n", layer);
+	}
+	int alreadyRotating = 0;
+	for (int i=0; i<NUM_FACES; i++) {
+		alreadyRotating += (layerRotationDirection[i]!=0);
+	}
+	if (alreadyRotating != 0) {
+		log_debug("%s\n", "Layer is already rotating");
+	} else {
+		layerRotationDirection[layer] = direction;
+	}
+}
+
+void updateLayerRotations() {
+	int updatedLayers = 0;
+	for (int i=0; i<NUM_FACES; i++) {
+		if (layerRotationDirection[i]) {
+			updatedLayers++;
+			layerRotationDegrees[i] += ROTATION_SPEED * layerRotationDirection[i];
+			if (abs(layerRotationDegrees[i]) >= 90) {
+				rotateCubeFace(&rubiksCube, i, layerRotationDirection[i]);
+				layerRotationDegrees[i] = 0;
+				layerRotationDirection[i] = 0;
+			}
+		}
+	}
+	if (updatedLayers > 1) {
+		log_fatal("%s\n", "More than one layer rotating at once!");
+	}
 }
  
 void drawAxisLines() {
@@ -112,11 +160,27 @@ Vec3f determineCubeCoord(Cube *cube) {
 	return cubeCoord;
 }
 
+void getLayerRotation(Cube *cube) {
+	// assuming that only one face at a time will rotate
+	for (int i=0; i<NUM_FACES; i++) {
+		if (layerRotationDirection[i] != 0) {
+			if (cubeInFace(cube, i)) {
+				glRotatef( layerRotationDegrees[i], faceData[i].normal.x, faceData[i].normal.y, faceData[i].normal.z );
+				break;
+			}
+		}
+	}
+}
+
 void drawRubiksCube(){
 	for(int i=0; i<NUM_CUBES; i++){
 		Cube *cube = findCube(&rubiksCube, i);
 		Vec3f cubeCoord = determineCubeCoord(cube);
+		// TODO clean this up
+		glPushMatrix();
+		getLayerRotation(cube);
 		drawCube(*cube, cubeCoord);
+		glPopMatrix();
 	}
 	printed = 1;
 }
@@ -185,54 +249,54 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		case GLFW_KEY_1:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rotateCubeFace(&rubiksCube, LEFT_FACE, CLOCKWISE);
+					beginLayerRotation(LEFT_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rotateCubeFace(&rubiksCube, LEFT_FACE, COUNTERCLOCKWISE);
+					beginLayerRotation(LEFT_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_2:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rotateCubeFace(&rubiksCube, RIGHT_FACE, CLOCKWISE);
+					beginLayerRotation(RIGHT_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rotateCubeFace(&rubiksCube, RIGHT_FACE, COUNTERCLOCKWISE);
+					beginLayerRotation(RIGHT_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_3:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rotateCubeFace(&rubiksCube, BOTTOM_FACE, CLOCKWISE);
+					beginLayerRotation(BOTTOM_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rotateCubeFace(&rubiksCube, BOTTOM_FACE, COUNTERCLOCKWISE);
+					beginLayerRotation(BOTTOM_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_4:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rotateCubeFace(&rubiksCube, TOP_FACE, CLOCKWISE);
+					beginLayerRotation(TOP_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rotateCubeFace(&rubiksCube, TOP_FACE, COUNTERCLOCKWISE);
+					beginLayerRotation(TOP_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_5:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rotateCubeFace(&rubiksCube, BACK_FACE, CLOCKWISE);
+					beginLayerRotation(FRONT_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rotateCubeFace(&rubiksCube, BACK_FACE, COUNTERCLOCKWISE);
+					beginLayerRotation(FRONT_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_6:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rotateCubeFace(&rubiksCube, FRONT_FACE, CLOCKWISE);
+					beginLayerRotation(BACK_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rotateCubeFace(&rubiksCube, FRONT_FACE, COUNTERCLOCKWISE);
+					beginLayerRotation(BACK_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
