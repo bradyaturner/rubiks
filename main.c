@@ -46,6 +46,7 @@ Rubiks rubiksCube;
 int printed = 1;
 int debug = 0;
 int demoMode = 0;
+int animationsOn = 1;
 
 // Keep track of animation of rotated layers
 float layerRotationDegrees[NUM_FACES] = {0, 0, 0, 0, 0, 0};
@@ -81,7 +82,9 @@ int isRotating() {
 }
 
 void beginLayerRotation(int layer, int direction) {
-	log_debug("Begin layer rotation: layer: %i, direction: %i\n", layer, direction);
+	log_debug("Begin layer rotation: layer: %i, direction: %i [animations=%s]\n",
+		layer, direction, animationsOn ? "on" : "off"
+	);
 	if (direction != CLOCKWISE && direction != COUNTERCLOCKWISE) {
 		log_error("Invalid direction %i for layer %i\n", direction, layer);
 		return;
@@ -89,8 +92,13 @@ void beginLayerRotation(int layer, int direction) {
 	if (layer >= NUM_FACES || layer < 0) {
 		log_error("Invalid layer to rotate: %i\n", layer);
 	}
+
 	if (!isRotating()) {
-		layerRotationDirection[layer] = direction;
+		if (!animationsOn) {
+			rotateCubeFace(&rubiksCube, layer, direction);
+		} else {
+			layerRotationDirection[layer] = direction;
+		}
 	}
 }
 
@@ -239,6 +247,10 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 				demoMode = !demoMode;
 			}
 			break;
+		case GLFW_KEY_A:
+			animationsOn = !animationsOn;
+			printf("Animations %s\n", animationsOn ? "ON" : "OFF");
+			break;
 		case 48:
 			resetCameraRotation();
 			break;
@@ -324,6 +336,7 @@ void printHelpText() {
 	printf("\t\tq/ESC: quit\n");
 	printf("\t\td: enable/disable debug mode\n");
 	printf("\t\tD: enable/disable demo mode\n");
+	printf("\t\ta: enable/disable animations\n");
 	printf("\t\tp: print debug info\n");
 
 	printf("\tCamera controls:\n");
