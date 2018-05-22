@@ -10,7 +10,7 @@
 #include "quaternion.h"
 #include "logger.h"
 
-#define ROTATION_SPEED 5
+#define ROTATION_SPEED 6
 
 // OpenGL/GLFW functions
 void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -30,6 +30,7 @@ void drawNormalSquare(int x, int y, int z);
 void beginLayerRotation(int layer, int direction);
 void updateLayerRotations(void);
 void getLayerRotation(Cube *cube);
+int isRotating(void);
 
 // Debug functions
 void resetDebugInfo();
@@ -37,16 +38,17 @@ void resetDebugInfo();
 double rotate_y=0;
 double rotate_x=0;
 
-double cubeWidth = 0.3;
+double cubeWidth = 0.2;
 
 GLFWwindow *window;
 
 Rubiks rubiksCube;
 int printed = 1;
 int debug = 0;
+int demoMode = 0;
 
 // Keep track of animation of rotated layers
-int layerRotationDegrees[NUM_FACES] = {0, 0, 0, 0, 0, 0};
+float layerRotationDegrees[NUM_FACES] = {0, 0, 0, 0, 0, 0};
 int layerRotationDirection[NUM_FACES] = {0, 0, 0, 0, 0, 0};
 
 void display(){
@@ -70,8 +72,16 @@ void display(){
 	glFlush();
 }
 
+int isRotating() {
+	int alreadyRotating = 0;
+	for (int i=0; i<NUM_FACES; i++) {
+		alreadyRotating += (layerRotationDirection[i]!=0);
+	}
+	return alreadyRotating;
+}
+
 void beginLayerRotation(int layer, int direction) {
-	log_info("Begin layer rotation: layer: %i, direction: %i\n", layer, direction);
+	log_debug("Begin layer rotation: layer: %i, direction: %i\n", layer, direction);
 	if (direction != CLOCKWISE && direction != COUNTERCLOCKWISE) {
 		log_error("Invalid direction %i for layer %i\n", direction, layer);
 		return;
@@ -79,13 +89,7 @@ void beginLayerRotation(int layer, int direction) {
 	if (layer >= NUM_FACES || layer < 0) {
 		log_error("Invalid layer to rotate: %i\n", layer);
 	}
-	int alreadyRotating = 0;
-	for (int i=0; i<NUM_FACES; i++) {
-		alreadyRotating += (layerRotationDirection[i]!=0);
-	}
-	if (alreadyRotating != 0) {
-		log_debug("%s\n", "Layer is already rotating");
-	} else {
+	if (!isRotating()) {
 		layerRotationDirection[layer] = direction;
 	}
 }
@@ -229,7 +233,11 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 			resetDebugInfo();
 			break;
 		case GLFW_KEY_D:
-			debug = !debug;
+			if (mods==0) {
+				debug = !debug;
+			} else if (mods == GLFW_MOD_SHIFT) {
+				demoMode = !demoMode;
+			}
 			break;
 		case 48:
 			resetCameraRotation();
@@ -315,6 +323,7 @@ void printHelpText() {
 	printf("\t\th: print this dialog\n");
 	printf("\t\tq/ESC: quit\n");
 	printf("\t\td: enable/disable debug mode\n");
+	printf("\t\tD: enable/disable demo mode\n");
 	printf("\t\tp: print debug info\n");
 
 	printf("\tCamera controls:\n");
@@ -355,18 +364,14 @@ int main( int argc, char* argv[] ){
 
 	printHelpText();
 
-	int printedSuccess = 0;
 	while (!glfwWindowShouldClose(window)) {
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
 		display();
 
-		if (!isRubiksSolved(&rubiksCube)) {
-			printedSuccess = 0;
-		} else {
-			if (!printedSuccess) {
-				printf("SOLVED!!!\n");
-				printedSuccess = 1;
+		if (demoMode) {
+			if(!isRotating()) {
+				beginLayerRotation(rand()%NUM_FACES, rand()%2==0 ? 1:-1);
 			}
 		}
 
@@ -391,7 +396,7 @@ void drawCube(Cube cube, Vec3f coords) {
 	glPolygonOffset(-1,-1);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glLineWidth((GLfloat)8); // this should be proportional to cube size
-	glColor3f(0.2, 0.2, 0.2); // line color
+	glColor3f(0.05, 0.05, 0.05); // line color
 	drawNormalCube(cube, 0);
 	glDisable(GL_POLYGON_OFFSET_LINE);
 

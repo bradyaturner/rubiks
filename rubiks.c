@@ -9,7 +9,7 @@ void rotateLayer(Rubiks *rubiks, int face, int direction) {
 		log_fatal("Attempted to rotate invalid face #%i\n", face);
 		exit(1);
 	}
-	log_info("rotateLayer: [%i, %i, %i, %i, %i, %i, %i, %i, %i] -> {%i, %i, %i} direction: %sclockwise\n",
+	log_trace("rotateLayer: [%i, %i, %i, %i, %i, %i, %i, %i, %i] -> {%i, %i, %i} direction: %sclockwise\n",
 		layers[face][0], layers[face][1], layers[face][2], layers[face][3], layers[face][4], layers[face][5], layers[face][6], layers[face][7], layers[face][8],
 		faceData[face].rotation.x, faceData[face].rotation.y, faceData[face].rotation.z, direction==CLOCKWISE ? "":"counter"
 	);
@@ -55,7 +55,7 @@ void translateLayer(Rubiks *rubiks, const int layer[], const int translation[]) 
 
 void rotateCubeFace(Rubiks *rubiks, int face, int direction) {
 	if (face >=0 && face < NUM_FACES) {
-		log_info("Rotating face %i %sclockwise\n", face, direction==CLOCKWISE ? "" : "counter");
+		log_debug("Rotating face %i %sclockwise\n", face, direction==CLOCKWISE ? "" : "counter");
 		rotateLayer(rubiks, face, direction);
 	}
 }
