@@ -8,6 +8,8 @@ typedef struct {
 } RGB3f;
 
 int indexOf(const int arr[], const int size, const int element);
+double maxd(double a, double b);
+double mind(double a, double b);
 int nearlyEqualF(float a, float b);
 
 #endif

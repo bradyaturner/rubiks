@@ -10,7 +10,10 @@
 #include "quaternion.h"
 #include "logger.h"
 
-#define ROTATION_SPEED 6
+#define ROTATION_SPEED_DEFAULT 6
+#define ROTATION_SPEED_MAX 20
+#define ROTATION_SPEED_MIN 0.1
+#define ROTATION_SPEED_INCREMENT 1
 
 // OpenGL/GLFW functions
 void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -19,6 +22,9 @@ void display();
 // Control functions
 void resetCameraRotation();
 void printHelpText();
+void increaseRotationSpeed();
+void decreaseRotationSpeed();
+void resetRotationSpeed();
 
 // Drawing functions
 void drawAxisLines();
@@ -47,6 +53,7 @@ int printed = 1;
 int debug = 0;
 int demoMode = 0;
 int animationsOn = 1;
+double rotationSpeed = ROTATION_SPEED_DEFAULT;
 
 // Keep track of animation of rotated layers
 float layerRotationDegrees[NUM_FACES] = {0, 0, 0, 0, 0, 0};
@@ -81,6 +88,20 @@ int isRotating() {
 	return alreadyRotating;
 }
 
+void resetRotationSpeed() {
+	rotationSpeed = ROTATION_SPEED_DEFAULT;
+}
+
+void increaseRotationSpeed() {
+	rotationSpeed = mind(rotationSpeed + ROTATION_SPEED_INCREMENT, ROTATION_SPEED_MAX);
+	printf("Increasing rotation speed: %f\n", rotationSpeed);
+}
+
+void decreaseRotationSpeed() {
+	rotationSpeed = maxd(rotationSpeed - ROTATION_SPEED_INCREMENT, ROTATION_SPEED_MIN);
+	printf("Decreasing rotation speed: %f\n", rotationSpeed);
+}
+
 void beginLayerRotation(int layer, int direction) {
 	log_debug("Begin layer rotation: layer: %i, direction: %i [animations=%s]\n",
 		layer, direction, animationsOn ? "on" : "off"
@@ -107,7 +128,7 @@ void updateLayerRotations() {
 	for (int i=0; i<NUM_FACES; i++) {
 		if (layerRotationDirection[i]) {
 			updatedLayers++;
-			layerRotationDegrees[i] += ROTATION_SPEED * layerRotationDirection[i];
+			layerRotationDegrees[i] += rotationSpeed * layerRotationDirection[i];
 			if (abs(layerRotationDegrees[i]) >= 90) {
 				rotateCubeFace(&rubiksCube, i, layerRotationDirection[i]);
 				layerRotationDegrees[i] = 0;
@@ -251,6 +272,16 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 			animationsOn = !animationsOn;
 			printf("Animations %s\n", animationsOn ? "ON" : "OFF");
 			break;
+		case GLFW_KEY_EQUAL:
+			if (mods==0) {
+				resetRotationSpeed();
+			} else if (mods == GLFW_MOD_SHIFT) {
+				increaseRotationSpeed();
+			}
+			break;
+		case GLFW_KEY_MINUS:
+			decreaseRotationSpeed();
+			break;
 		case 48:
 			resetCameraRotation();
 			break;
@@ -337,6 +368,9 @@ void printHelpText() {
 	printf("\t\td: enable/disable debug mode\n");
 	printf("\t\tD: enable/disable demo mode\n");
 	printf("\t\ta: enable/disable animations\n");
+	printf("\t\t+: increase rotation speed\n");
+	printf("\t\t-: decrease rotation speed\n");
+	printf("\t\t=: reset rotation speed\n");
 	printf("\t\tp: print debug info\n");
 
 	printf("\tCamera controls:\n");

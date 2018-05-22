@@ -17,6 +17,14 @@ int indexOf(const int arr[], const int size, const int element) {
 	return index;
 }
 
+double maxd(double a, double b) {
+	return (a>b) ? a : b;
+}
+
+double mind(double a, double b) {
+	return (a<b) ? a : b;
+}
+
 // http://floating-point-gui.de/errors/comparison/
 int nearlyEqualF(float a, float b) {
 	float absA = fabsf(a);
