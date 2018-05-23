@@ -129,7 +129,7 @@ void updateLayerRotations() {
 		if (layerRotationDirection[i]) {
 			updatedLayers++;
 			layerRotationDegrees[i] += rotationSpeed * layerRotationDirection[i];
-			if (abs(layerRotationDegrees[i]) >= 90) {
+			if (fabsf(layerRotationDegrees[i]) >= 90) {
 				rotateCubeFace(&rubiksCube, i, layerRotationDirection[i]);
 				layerRotationDegrees[i] = 0;
 				layerRotationDirection[i] = 0;
@@ -440,7 +440,7 @@ void drawCube(Cube cube, Vec3f coords) {
 
 	// Draw outline
 	glEnable(GL_POLYGON_OFFSET_LINE);
-	glPolygonOffset(-1,-1);
+	glPolygonOffset(0,-1);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glLineWidth((GLfloat)8); // this should be proportional to cube size
 	glColor3f(0.05, 0.05, 0.05); // line color
@@ -468,7 +468,6 @@ void drawNormalCube(const Cube cube, int useColor) {
 		-0.5, -0.5,  0.5,		-0.5,  0.5,  0.5,		0.5, 0.5, 0.5,		0.5, -0.5,  0.5  // back
 	};
 
-	float *colors = getColorArray(cube);
 
 	glEnableClientState(GL_VERTEX_ARRAY);
 	if (useColor)
@@ -476,8 +475,10 @@ void drawNormalCube(const Cube cube, int useColor) {
 
 	glVertexPointer(3, GL_FLOAT, 0, vertices);
 
-	if (useColor)
+	if (useColor) {
+		float *colors = getColorArray(cube);
 		glColorPointer(3, GL_FLOAT, 0, colors);
+	}
 
 	glDrawArrays(GL_QUADS, 0, 24);
 
