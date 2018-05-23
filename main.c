@@ -407,9 +407,26 @@ int main( int argc, char* argv[] ){
 
 	glEnable(GL_DEPTH_TEST);
 	glfwSetKeyCallback(window, keyboardHandler);
-	glClearColor(0.85, 0.85, 0.85, 0.0);
+	//glClearColor(0.85, 0.85, 0.85, 0.0);
+	glClearColor(0.15, 0.15, 0.15, 0.0);
 
 	printHelpText();
+
+	// Somewhere in the initialization part of your program…
+    glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+
+	// Create light components
+	GLfloat ambientLight[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+	GLfloat diffuseLight[] = { 0.8f, 0.8f, 0.8, 1.0f };
+	GLfloat specularLight[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	GLfloat position[] = { -1.5f, 1.0f, -4.0f, 1.0f };
+
+	// Assign created components to GL_LIGHT0
+	glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
+	glLightfv(GL_LIGHT0, GL_POSITION, position);
 
 	while (!glfwWindowShouldClose(window)) {
 		int width, height;
@@ -438,6 +455,12 @@ void drawCube(Cube cube, Vec3f coords) {
 	glScalef(cubeWidth, cubeWidth, cubeWidth);
 	glMultMatrixf(quatToMatrix(&cube.quat));
 
+
+    glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+    //glColorMaterial(GL_FRONT, GL_SPECULAR);
+	//glColorMaterial(GL_FRONT, GL_SHININESS);
+	glEnable(GL_COLOR_MATERIAL);
+
 	// Draw outline
 	glEnable(GL_POLYGON_OFFSET_LINE);
 	glPolygonOffset(0,-1);
@@ -447,12 +470,17 @@ void drawCube(Cube cube, Vec3f coords) {
 	drawNormalCube(cube, 0);
 	glDisable(GL_POLYGON_OFFSET_LINE);
 
+	glFrontFace(GL_CCW);
+
+
 	// Draw solid polygons
 	glEnable(GL_POLYGON_OFFSET_FILL);
 	glPolygonOffset(1,1); // just guessing on these values
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	drawNormalCube(cube, 1);
 	glDisable(GL_POLYGON_OFFSET_FILL);
+
+	glDisable(GL_COLOR_MATERIAL);
 
 	glPopMatrix();
 }
@@ -475,9 +503,12 @@ void drawNormalCube(const Cube cube, int useColor) {
 
 	glVertexPointer(3, GL_FLOAT, 0, vertices);
 
+	glEnableClientState(GL_NORMAL_ARRAY);
+	glNormalPointer(GL_FLOAT, 0, getNormalArray(cube));
+
 	if (useColor) {
 		float *colors = getColorArray(cube);
-		glColorPointer(3, GL_FLOAT, 0, colors);
+		glColorPointer(4, GL_FLOAT, 0, colors);
 	}
 
 	glDrawArrays(GL_QUADS, 0, 24);

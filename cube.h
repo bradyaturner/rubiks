@@ -49,6 +49,7 @@ void rotateCube(Cube *cube, const Vec3i degrees);
 void resetRotation(Cube *cube);
 void resetPosition(Cube *cube);
 float* getColorArray(const Cube cube);
+float* getNormalArray(const Cube cube);
 int isCubeInitPos(Cube *cube);
 int getShownFace(Cube *cube, int face);
 

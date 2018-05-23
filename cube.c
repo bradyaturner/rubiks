@@ -19,16 +19,35 @@ void rotateCube(Cube *cube, const Vec3i degrees) {
 }
 
 float* getColorArray(const Cube cube) {
-	static float colors[72];
+	const int numVertices = 4;
+	const int numValues = 4;
+	static float colors[NUM_FACES * numVertices * numValues];
+	float alpha = 0.0f;
 
 	for (int i=0; i<NUM_FACES; i++) {
-		for (int v=0; v<4; v++) {
-			colors[i*12 + v*3] = cube.faces[i].color.red;
-			colors[i*12 + v*3 + 1] = cube.faces[i].color.green;
-			colors[i*12 + v*3 + 2] = cube.faces[i].color.blue;
+		// repeat each color 4 times (4 vertices)
+		for (int v=0; v<5; v++) {
+			int offset = (i*numVertices*numValues) + (v*numValues);
+			colors[offset] = cube.faces[i].color.red;
+			colors[offset + 1] = cube.faces[i].color.green;
+			colors[offset + 2] = cube.faces[i].color.blue;
+			colors[offset + 3] = alpha;
 		}
 	}
 	return colors;
+}
+
+float* getNormalArray(const Cube cube) {
+	static float normals[72];
+
+	for (int i=0; i<NUM_FACES; i++) {
+		for (int v=0; v<4; v++) {
+			normals[i*12 + v*3] = faceData[i].normal.x;
+			normals[i*12 + v*3 + 1] = faceData[i].normal.y;
+			normals[i*12 + v*3 + 2] = faceData[i].normal.z;
+		}
+	}
+	return normals;
 }
 
 void initializeCube(Cube *cube, int id, int position) {
