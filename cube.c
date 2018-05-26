@@ -18,16 +18,17 @@ void rotateCube(Cube *cube, const Vec3i degrees) {
 	log_trace("[CUBEID: %i] Cube quaternion after: %f, %f, %f, %f...\n", cube->id, cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);
 }
 
+#define NUM_CUBE_VERTICES 4
+#define NUM_COLOR_VALUES 4
 float* getColorArray(const Cube cube) {
-	const int numVertices = 4;
-	const int numValues = 4;
-	static float colors[NUM_FACES * numVertices * numValues];
+
+	static float colors[NUM_FACES * NUM_CUBE_VERTICES * NUM_COLOR_VALUES];
 	float alpha = 0.0f;
 
 	for (int i=0; i<NUM_FACES; i++) {
 		// repeat each color 4 times (4 vertices)
 		for (int v=0; v<5; v++) {
-			int offset = (i*numVertices*numValues) + (v*numValues);
+			int offset = (i*NUM_CUBE_VERTICES*NUM_COLOR_VALUES) + (v*NUM_COLOR_VALUES);
 			colors[offset] = cube.faces[i].color.red;
 			colors[offset + 1] = cube.faces[i].color.green;
 			colors[offset + 2] = cube.faces[i].color.blue;
