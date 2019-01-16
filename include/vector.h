@@ -2,6 +2,11 @@
 #define VECTOR_H
 
 typedef struct {
+    double x;
+    double y;
+} Vec2d;
+
+typedef struct {
     int x;
     int y;
     int z;

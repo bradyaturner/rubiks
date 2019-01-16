@@ -41,8 +41,7 @@ int isRotating(void);
 // Debug functions
 void resetDebugInfo();
 
-double rotate_y=0;
-double rotate_x=0;
+Vec2d rotate = {0, 0};
 
 double cubeWidth = 0.2;
 
@@ -67,9 +66,9 @@ void display(){
 	// Reset transformations
 	glLoadIdentity();
 
-	// Rotate when user changes rotate_x and rotate_y
-	glRotatef( rotate_x, 1.0, 0.0, 0.0 );
-	glRotatef( rotate_y, 0.0, 1.0, 0.0 );
+	// Rotate when user changes rotate.x and rotate.y
+	glRotatef( rotate.x, 1.0, 0.0, 0.0 );
+	glRotatef( rotate.y, 0.0, 1.0, 0.0 );
 
 	updateLayerRotations();
 	drawRubiksCube();
@@ -286,16 +285,16 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 			resetCameraRotation();
 			break;
 		case GLFW_KEY_RIGHT:
-			rotate_y += 5;
+			rotate.y += 5;
 			break;
 		case GLFW_KEY_LEFT:
-			rotate_y -= 5;
+			rotate.y -= 5;
 			break;
 		case GLFW_KEY_UP:
-			rotate_x += 5;
+			rotate.x += 5;
 			break;
 		case GLFW_KEY_DOWN:
-			rotate_x -= 5;
+			rotate.x -= 5;
 			break;
 		case GLFW_KEY_1:
 			if (action == GLFW_PRESS) {
@@ -355,8 +354,8 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 }
 
 void resetCameraRotation() {
-	rotate_x = 0;
-	rotate_y = 0;
+	rotate.x = 0;
+	rotate.y = 0;
 }
 
 void printHelpText() {
