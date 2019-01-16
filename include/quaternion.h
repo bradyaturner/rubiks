@@ -12,24 +12,14 @@ typedef struct {
 	float w;
 } Quaternion;
 
-// util methods
-float degToRad(float deg);
-
 // Quaternion methods
-void quatInitIdentity(Quaternion *quat);
-void quatInitRotations(Quaternion *quat, Vec3f rotations);
-void quatInitEuler(Quaternion *quat, Vec3f angles);
-void quatInit(Quaternion *quat, float x, float y, float z, float w);
-Quaternion quatConjugate(Quaternion *quat);
-Quaternion quatInverse(Quaternion *quat);
-Quaternion quatNormalize(Quaternion *quat);
-Quaternion quatMultiply(Quaternion *left, Quaternion *right);
-Vec3f quatVecMultiply(Quaternion *left, Vec3f right);
-Quaternion quatMultiplyNoNormal(Quaternion *left, Quaternion *right);
-float quatMagnitude(Quaternion *quat);
-Quaternion quatFromAxis(Vec3f axis, float angle);
-float quatDotProduct(Quaternion *q1, Quaternion *q2);
-float* quatToMatrix(Quaternion *quat);
-void quatSetEqual(Quaternion *q1, Quaternion *q2);
+void quat_initIdentity(Quaternion *quat);
+void quat_initEuler(Quaternion *quat, Vec3f angles);
+
+Quaternion quat_multiply(Quaternion *left, Quaternion *right);
+Vec3f quat_vecMultiply(Quaternion *left, Vec3f right);
+Quaternion quat_multiplyNoNormal(Quaternion *left, Quaternion *right);
+float* quat_toMatrix(Quaternion *quat);
+void quat_setEqual(Quaternion *q1, Quaternion *q2);
 
 #endif

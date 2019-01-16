@@ -33,9 +33,9 @@ Vec3f determineCubeCoord(Cube *cube);
 void drawCube(Cube cube, Vec3f coords);
 void drawNormalCube(const Cube cube, int useColor);
 void drawNormalSquare(int x, int y, int z);
-void beginLayerRotation(int layer, int direction);
-void updateLayerRotations(void);
-void getLayerRotation(Cube *cube);
+void beginFaceRotation(int face, int direction);
+void updateFaceRotations(void);
+void getFaceRotation(Cube *cube);
 int isRotating(void);
 
 // Debug functions
@@ -54,9 +54,9 @@ int demoMode = 0;
 int animationsOn = 1;
 double rotationSpeed = ROTATION_SPEED_DEFAULT;
 
-// Keep track of animation of rotated layers
-float layerRotationDegrees[NUM_FACES] = {0, 0, 0, 0, 0, 0};
-int layerRotationDirection[NUM_FACES] = {0, 0, 0, 0, 0, 0};
+// Keep track of animation of rotated faces
+float faceRotationDegrees[NUM_FACES] = {0, 0, 0, 0, 0, 0};
+int faceRotationDirection[NUM_FACES] = {0, 0, 0, 0, 0, 0};
 
 void display(){
 
@@ -70,7 +70,7 @@ void display(){
 	glRotatef( rotate.x, 1.0, 0.0, 0.0 );
 	glRotatef( rotate.y, 0.0, 1.0, 0.0 );
 
-	updateLayerRotations();
+	updateFaceRotations();
 	drawRubiksCube();
 	if (debug) {
 		drawAxisLines();
@@ -82,7 +82,7 @@ void display(){
 int isRotating() {
 	int alreadyRotating = 0;
 	for (int i=0; i<NUM_FACES; i++) {
-		alreadyRotating += (layerRotationDirection[i]!=0);
+		alreadyRotating += (faceRotationDirection[i]!=0);
 	}
 	return alreadyRotating;
 }
@@ -101,42 +101,42 @@ void decreaseRotationSpeed() {
 	printf("Decreasing rotation speed: %f\n", rotationSpeed);
 }
 
-void beginLayerRotation(int layer, int direction) {
-	log_debug("Begin layer rotation: layer: %i, direction: %i [animations=%s]\n",
-		layer, direction, animationsOn ? "on" : "off"
+void beginFaceRotation(int face, int direction) {
+	log_debug("Begin face rotation: face: %i, direction: %i [animations=%s]\n",
+		face, direction, animationsOn ? "on" : "off"
 	);
 	if (direction != CLOCKWISE && direction != COUNTERCLOCKWISE) {
-		log_error("Invalid direction %i for layer %i\n", direction, layer);
+		log_error("Invalid direction %i for face %i\n", direction, face);
 		return;
 	}
-	if (layer >= NUM_FACES || layer < 0) {
-		log_error("Invalid layer to rotate: %i\n", layer);
+	if (face >= NUM_FACES || face < 0) {
+		log_error("Invalid face to rotate: %i\n", face);
 	}
 
 	if (!isRotating()) {
 		if (!animationsOn) {
-			rotateCubeFace(&rubiksCube, layer, direction);
+			rc_rotateFace(&rubiksCube, face, direction);
 		} else {
-			layerRotationDirection[layer] = direction;
+			faceRotationDirection[face] = direction;
 		}
 	}
 }
 
-void updateLayerRotations() {
-	int updatedLayers = 0;
+void updateFaceRotations() {
+	int updatedFaces = 0;
 	for (int i=0; i<NUM_FACES; i++) {
-		if (layerRotationDirection[i]) {
-			updatedLayers++;
-			layerRotationDegrees[i] += rotationSpeed * layerRotationDirection[i];
-			if (fabsf(layerRotationDegrees[i]) >= 90) {
-				rotateCubeFace(&rubiksCube, i, layerRotationDirection[i]);
-				layerRotationDegrees[i] = 0;
-				layerRotationDirection[i] = 0;
+		if (faceRotationDirection[i]) {
+			updatedFaces++;
+			faceRotationDegrees[i] += rotationSpeed * faceRotationDirection[i];
+			if (fabsf(faceRotationDegrees[i]) >= 90) {
+				rc_rotateFace(&rubiksCube, i, faceRotationDirection[i]);
+				faceRotationDegrees[i] = 0;
+				faceRotationDirection[i] = 0;
 			}
 		}
 	}
-	if (updatedLayers > 1) {
-		log_fatal("%s\n", "More than one layer rotating at once!");
+	if (updatedFaces > 1) {
+		log_fatal("%s\n", "More than one face rotating at once!");
 	}
 }
  
@@ -161,25 +161,25 @@ Vec3f determineCubeCoord(Cube *cube) {
 	// TODO there has to be a smarter way to do this math
 	int xPos, yPos, zPos;
 
-	if (cubeInFace(cube, LEFT_FACE)) {
+	if (rc_checkCubeInFace(cube, LEFT_FACE)) {
 		xPos = -1;
-	} else if (cubeInFace(cube, RIGHT_FACE)) {
+	} else if (rc_checkCubeInFace(cube, RIGHT_FACE)) {
 		xPos = 1;
 	} else {
 		xPos = 0;
 	}
 
-	if (cubeInFace(cube, BOTTOM_FACE)) {
+	if (rc_checkCubeInFace(cube, BOTTOM_FACE)) {
 		yPos = -1;
-	} else if (cubeInFace(cube, TOP_FACE)) {
+	} else if (rc_checkCubeInFace(cube, TOP_FACE)) {
 		yPos = 1;
 	} else {
 		yPos = 0;
 	}
 
-	if (cubeInFace(cube, FRONT_FACE)) {
+	if (rc_checkCubeInFace(cube, FRONT_FACE)) {
 		zPos = -1;
-	} else if (cubeInFace(cube, BACK_FACE)) {
+	} else if (rc_checkCubeInFace(cube, BACK_FACE)) {
 		zPos = 1;
 	} else {
 		zPos = 0;
@@ -192,12 +192,12 @@ Vec3f determineCubeCoord(Cube *cube) {
 	return cubeCoord;
 }
 
-void getLayerRotation(Cube *cube) {
+void getFaceRotation(Cube *cube) {
 	// assuming that only one face at a time will rotate
 	for (int i=0; i<NUM_FACES; i++) {
-		if (layerRotationDirection[i] != 0) {
-			if (cubeInFace(cube, i)) {
-				glRotatef( layerRotationDegrees[i], faceData[i].normal.x, faceData[i].normal.y, faceData[i].normal.z );
+		if (faceRotationDirection[i] != 0) {
+			if (rc_checkCubeInFace(cube, i)) {
+				glRotatef( faceRotationDegrees[i], faceData[i].normal.x, faceData[i].normal.y, faceData[i].normal.z );
 				break;
 			}
 		}
@@ -206,11 +206,11 @@ void getLayerRotation(Cube *cube) {
 
 void drawRubiksCube(){
 	for(int i=0; i<NUM_CUBES; i++){
-		Cube *cube = findCube(&rubiksCube, i);
+		Cube *cube = rc_getCubeAtPos(&rubiksCube, i);
 		Vec3f cubeCoord = determineCubeCoord(cube);
 		// TODO clean this up
 		glPushMatrix();
-		getLayerRotation(cube);
+		getFaceRotation(cube);
 		drawCube(*cube, cubeCoord);
 		glPopMatrix();
 	}
@@ -227,12 +227,12 @@ void resetDebugInfo() {
 	for (int i=0; i<NUM_FACES; i++) {
 		char faceStr[FACE_SIZE+1];
 		faceStr[FACE_SIZE] = '\0';
-		getFaceColors(&rubiksCube, i, faceStr);
+		rc_getFaceColors(&rubiksCube, i, faceStr);
 		printf("FACE: %c: %s\n", faceData[i].name, faceStr);
 	}
 	char rubiksStr[FACE_SIZE*NUM_FACES+1];
 	rubiksStr[FACE_SIZE*NUM_FACES] = '\0';
-	serializeRubiks(&rubiksCube, rubiksStr);
+	rc_serialize(&rubiksCube, rubiksStr);
 	printf("RUBIKS: %s\n", rubiksStr);
 }
 
@@ -249,10 +249,10 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 			glfwSetWindowShouldClose(window, 1);
 			break;
 		case GLFW_KEY_S:
-			shuffle(&rubiksCube, 20);
+			rc_shuffle(&rubiksCube, 20);
 			break;
 		case GLFW_KEY_R:
-			reset(&rubiksCube);
+			rc_reset(&rubiksCube);
 			break;
 		case GLFW_KEY_H:
 			printHelpText();
@@ -299,54 +299,54 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		case GLFW_KEY_1:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					beginLayerRotation(LEFT_FACE, CLOCKWISE);
+					beginFaceRotation(LEFT_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					beginLayerRotation(LEFT_FACE, COUNTERCLOCKWISE);
+					beginFaceRotation(LEFT_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_2:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					beginLayerRotation(RIGHT_FACE, CLOCKWISE);
+					beginFaceRotation(RIGHT_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					beginLayerRotation(RIGHT_FACE, COUNTERCLOCKWISE);
+					beginFaceRotation(RIGHT_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_3:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					beginLayerRotation(BOTTOM_FACE, CLOCKWISE);
+					beginFaceRotation(BOTTOM_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					beginLayerRotation(BOTTOM_FACE, COUNTERCLOCKWISE);
+					beginFaceRotation(BOTTOM_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_4:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					beginLayerRotation(TOP_FACE, CLOCKWISE);
+					beginFaceRotation(TOP_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					beginLayerRotation(TOP_FACE, COUNTERCLOCKWISE);
+					beginFaceRotation(TOP_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_5:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					beginLayerRotation(FRONT_FACE, CLOCKWISE);
+					beginFaceRotation(FRONT_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					beginLayerRotation(FRONT_FACE, COUNTERCLOCKWISE);
+					beginFaceRotation(FRONT_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
 		case GLFW_KEY_6:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					beginLayerRotation(BACK_FACE, CLOCKWISE);
+					beginFaceRotation(BACK_FACE, CLOCKWISE);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					beginLayerRotation(BACK_FACE, COUNTERCLOCKWISE);
+					beginFaceRotation(BACK_FACE, COUNTERCLOCKWISE);
 				}
 			}
 			break;
@@ -390,7 +390,7 @@ void printHelpText() {
 }
 
 int main( int argc, char* argv[] ){
-	initializeRubiks(&rubiksCube);
+	rc_initialize(&rubiksCube);
 
 	if (!glfwInit()) {
 		exit(EXIT_FAILURE);
@@ -417,7 +417,7 @@ int main( int argc, char* argv[] ){
 
 		if (demoMode) {
 			if(!isRotating()) {
-				beginLayerRotation(rand()%NUM_FACES, rand()%2==0 ? 1:-1);
+				beginFaceRotation(rand()%NUM_FACES, rand()%2==0 ? 1:-1);
 			}
 		}
 
@@ -435,7 +435,7 @@ void drawCube(Cube cube, Vec3f coords) {
 
 	glTranslatef(coords.x, coords.y, coords.z);
 	glScalef(cubeWidth, cubeWidth, cubeWidth);
-	glMultMatrixf(quatToMatrix(&cube.quat));
+	glMultMatrixf(quat_toMatrix(&cube.quat));
 
 	// Draw outline
 	glEnable(GL_POLYGON_OFFSET_LINE);
@@ -456,18 +456,17 @@ void drawCube(Cube cube, Vec3f coords) {
 	glPopMatrix();
 }
 
+static GLfloat vertices[] =
+{
+	-0.5, -0.5, -0.5,		-0.5, -0.5, 0.5,		-0.5, 0.5, 0.5,		-0.5, 0.5, -0.5, // left
+	0.5, -0.5, -0.5,		0.5, -0.5,  0.5,		0.5,  0.5, 0.5,		0.5,  0.5, -0.5, // right
+	-0.5, -0.5, -0.5,		-0.5, -0.5,  0.5,		0.5, -0.5, 0.5,		0.5, -0.5, -0.5, // bottom
+	-0.5,  0.5, -0.5,		-0.5,  0.5,  0.5,		0.5, 0.5, 0.5,		0.5,  0.5, -0.5, // top
+	-0.5, -0.5, -0.5,		-0.5,  0.5, -0.5,		0.5, 0.5, -0.5,		0.5, -0.5, -0.5, // front
+	-0.5, -0.5,  0.5,		-0.5,  0.5,  0.5,		0.5, 0.5, 0.5,		0.5, -0.5,  0.5  // back
+};
+
 void drawNormalCube(const Cube cube, int useColor) {
-	GLfloat vertices[] =
-	{
-		-0.5, -0.5, -0.5,		-0.5, -0.5, 0.5,		-0.5, 0.5, 0.5,		-0.5, 0.5, -0.5, // left
-		0.5, -0.5, -0.5,		0.5, -0.5,  0.5,		0.5,  0.5, 0.5,		0.5,  0.5, -0.5, // right
-		-0.5, -0.5, -0.5,		-0.5, -0.5,  0.5,		0.5, -0.5, 0.5,		0.5, -0.5, -0.5, // bottom
-		-0.5,  0.5, -0.5,		-0.5,  0.5,  0.5,		0.5, 0.5, 0.5,		0.5,  0.5, -0.5, // top
-		-0.5, -0.5, -0.5,		-0.5,  0.5, -0.5,		0.5, 0.5, -0.5,		0.5, -0.5, -0.5, // front
-		-0.5, -0.5,  0.5,		-0.5,  0.5,  0.5,		0.5, 0.5, 0.5,		0.5, -0.5,  0.5  // back
-	};
-
-
 	glEnableClientState(GL_VERTEX_ARRAY);
 	if (useColor)
 		glEnableClientState(GL_COLOR_ARRAY);
@@ -475,7 +474,7 @@ void drawNormalCube(const Cube cube, int useColor) {
 	glVertexPointer(3, GL_FLOAT, 0, vertices);
 
 	if (useColor) {
-		float *colors = getColorArray(cube);
+		float *colors = cube_getColorArray(cube);
 		glColorPointer(3, GL_FLOAT, 0, colors);
 	}
 

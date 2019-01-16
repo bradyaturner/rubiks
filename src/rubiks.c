@@ -4,43 +4,61 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void rotateLayer(Rubiks *rubiks, int face, int direction) {
+// Array positions of cubes after a 90-degree clockwise rotation
+static const int rotation[FACE_SIZE] = {6, 3, 0, 7, 4, 1, 8, 5, 2}; // to rotate ccw flip face and rotation values
+
+// Cube IDs of cubes in each face of Rubik's Cube
+static const int faces[NUM_FACES][FACE_SIZE] =
+{
+	{0, 3, 6, 9, 12, 15, 18, 21, 24},
+	{8, 5, 2, 17, 14, 11, 26, 23, 20},
+	{24, 25, 26, 21, 22, 23, 18, 19, 20},
+	{0, 1, 2, 3, 4, 5, 6, 7, 8},
+	{6, 7, 8, 15, 16, 17, 24, 25, 26},
+	{2, 1, 0, 11, 10, 9, 20, 19, 18}
+};
+
+static void rc_translateFace(Rubiks *rubiks, const int face[], const int translation[]);
+static int rc_getFace(Rubiks *rubiks, int face, Cube* cubes[]);
+
+void rc_rotateFace(Rubiks *rubiks, int face, int direction) {
 	if (face > NUM_FACES || face < 0) {
 		log_fatal("Attempted to rotate invalid face #%i\n", face);
 		exit(1);
 	}
-	log_trace("rotateLayer: [%i, %i, %i, %i, %i, %i, %i, %i, %i] -> {%i, %i, %i} direction: %sclockwise\n",
-		layers[face][0], layers[face][1], layers[face][2], layers[face][3], layers[face][4], layers[face][5], layers[face][6], layers[face][7], layers[face][8],
-		faceData[face].rotation.x, faceData[face].rotation.y, faceData[face].rotation.z, direction==CLOCKWISE ? "":"counter"
+	log_trace("rc_rotateFace(%i): [%i, %i, %i, %i, %i, %i, %i, %i, %i] -> {%i, %i, %i} direction: %sclockwise\n",
+		face, faces[face][0], faces[face][1], faces[face][2], faces[face][3], faces[face][4], faces[face][5],
+		faces[face][6], faces[face][7], faces[face][8], faceData[face].rotation.x, faceData[face].rotation.y,
+		faceData[face].rotation.z, direction==CLOCKWISE ? "":"counter"
 	);
 	Cube* cubes[FACE_SIZE];
-	getFace(rubiks, face, cubes);
+	rc_getFace(rubiks, face, cubes);
 	int newPositions[FACE_SIZE];
 	for (int i=0; i<9; i++) {
-		log_debug("Determining new position for cube at position %i == layers[%i][%i]=%i\n",
+		log_debug("Determining new position for cube at position %i == faces[%i][%i]=%i\n",
 			cubes[i]->position,
-			face, i, layers[face][i]);
+			face, i, faces[face][i]);
 
 		int index = indexOf(rotation, FACE_SIZE, i);
-		newPositions[i] = layers[face][index];
+		newPositions[i] = faces[face][index];
 	}
 
 	Vec3i deg = faceData[face].rotation;
 	if (direction == CLOCKWISE) {
-		translateLayer(rubiks, layers[face], newPositions);
+		rc_translateFace(rubiks, faces[face], newPositions);
 	} else {
-		translateLayer(rubiks, newPositions, layers[face]);
+		rc_translateFace(rubiks, newPositions, faces[face]);
 		deg = vectorMultiply(deg, -1);
 	}
 	for (int i=0; i<FACE_SIZE; i++) {
-		rotateCube(cubes[i], deg);
+		cube_rotate(cubes[i], deg);
 	}
 }
 
-void translateLayer(Rubiks *rubiks, const int layer[], const int translation[]) {
+void rc_translateFace(Rubiks *rubiks, const int face[], const int translation[]) {
 	Cube* cubes[FACE_SIZE];
 	for (int i=0; i<FACE_SIZE; i++) {
-		cubes[i] = findCube(rubiks, layer[i]);
+		cubes[i] = rc_getCubeAtPos(rubiks, face[i]);
 	}
 
 	for (int i=0; i<FACE_SIZE; i++) {
@@ -53,14 +71,7 @@ void translateLayer(Rubiks *rubiks, const int layer[], const int translation[]) 
 	}
 }
 
-void rotateCubeFace(Rubiks *rubiks, int face, int direction) {
-	if (face >=0 && face < NUM_FACES) {
-		log_debug("Rotating face %i %sclockwise\n", face, direction==CLOCKWISE ? "" : "counter");
-		rotateLayer(rubiks, face, direction);
-	}
-}
-
-Cube* findCube(Rubiks *rubiks, int cubePosition) {
+Cube* rc_getCubeAtPos(Rubiks *rubiks, int cubePosition) {
 	Cube* cube = NULL;
 	for (int i=0; i<NUM_CUBES; i++) {
 		if (rubiks->cubes[i].position == cubePosition) {
@@ -75,17 +86,23 @@ Cube* findCube(Rubiks *rubiks, int cubePosition) {
 	return cube;
 }
 
-void initializeRubiks(Rubiks *rubiks) {
+void rc_initialize(Rubiks *rubiks) {
 	for (int i = 0; i<NUM_CUBES; i++) {
-		initializeCube(&rubiks->cubes[i], i, i);
+		cube_initialize(&rubiks->cubes[i], i, i);
 	}
 }
 
-int getFace(Rubiks *rubiks, int face, Cube* cubes[]) {
+void rc_reset(Rubiks *rubiks) {
+	for (int i = 0; i<NUM_CUBES; i++) {
+		cube_reset(&rubiks->cubes[i]);
+	}
+}
+
+int rc_getFace(Rubiks *rubiks, int face, Cube* cubes[]) {
 	for (int i=0; i<FACE_SIZE; i++) {
-		int pos = layers[face][i];
+		int pos = faces[face][i];
 		log_trace("Looking for cube at position = %i", pos);
-		cubes[i] = findCube(rubiks, pos);
+		cubes[i] = rc_getCubeAtPos(rubiks, pos);
 		if (cubes[i] == NULL) {
 			log_fatal("No cube found at position %i in face %i\n", pos, face);
 			return -1;
@@ -95,10 +112,10 @@ int getFace(Rubiks *rubiks, int face, Cube* cubes[]) {
 	return 1;
 }
 
-int serializeRubiks(Rubiks *rubiks, char* out) {
+int rc_serialize(Rubiks *rubiks, char* out) {
 	char* ptr = out;
 	for (int fn=0; fn<NUM_FACES; fn++) {
-		getFaceColors(rubiks, fn, ptr);
+		rc_getFaceColors(rubiks, fn, ptr);
 		ptr += FACE_SIZE;
 	}
 
@@ -115,15 +132,15 @@ int serializeRubiks(Rubiks *rubiks, char* out) {
 	return 1;
 }
 
-int getFaceColors(Rubiks *rubiks, int face, char* colors) {
+int rc_getFaceColors(Rubiks *rubiks, int face, char* colors) {
 	Cube* cubes[FACE_SIZE];
-	getFace(rubiks, face, cubes);
+	rc_getFace(rubiks, face, cubes);
 	printf("Finding cubes for face: %c\n", faceData[face].name);
 	for (int i=0; i<FACE_SIZE; i++) {
 
 		// iterate over each cube in face (cubes[0..FACE_SIZE])
 		// for each cube in face, iterate over its faces
-		int fn = getShownFace(cubes[i], face);
+		int fn = cube_getShownFace(cubes[i], face);
 		printf("\tFound in face: %c\n", faceData[fn].name);
 		if (fn != -1) {
 			colors[i] = faceData[fn].color;
@@ -135,27 +152,22 @@ int getFaceColors(Rubiks *rubiks, int face, char* colors) {
 	return 1;
 }
 
-void shuffle(Rubiks *rubiks, int times) {
+void rc_shuffle(Rubiks *rubiks, int times) {
 	for (int i=0; i<times; i++) {
-		rotateLayer(rubiks, rand()%NUM_FACES, rand()%2==0 ? 1:-1);
+		rc_rotateFace(rubiks, rand()%NUM_FACES, rand()%2==0 ? 1:-1);
 	}
 }
 
-void reset(Rubiks *rubiks) {
-	for (int i = 0; i<NUM_CUBES; i++) {
-		resetCube(&rubiks->cubes[i]);
-	}
-}
-
-int isRubiksSolved(Rubiks *rubiks) {
+int rc_checkSolved(Rubiks *rubiks) {
 	for (int i=0; i<NUM_CUBES; i++) {
-		if (!isCubeInitPos(&rubiks->cubes[i])){
+		Cube *cube = &rubiks->cubes[i];
+		if (cube->position != cube->initialPosition) {
 			return 0;
 		}
 	}
 	return 1;
 }
 
-int cubeInFace(Cube *cube, int face) {
-	return (indexOf(layers[face], FACE_SIZE, cube->position) != -1);
+int rc_checkCubeInFace(Cube *cube, int face) {
+	return (indexOf(faces[face], FACE_SIZE, cube->position) != -1);
 }
