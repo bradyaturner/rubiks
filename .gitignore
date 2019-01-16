@@ -1,4 +1,3 @@
-quat
 rubiks
-test
-*.o
+**.o
+**.d
