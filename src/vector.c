@@ -28,6 +28,14 @@ Vec3f vec3fNormalize(Vec3f vec) {
 	return vec;
 }
 
+Vec3f vec3fMultiplyScalar(Vec3f v, float s) {
+	Vec3f tmp;
+	tmp.x = v.x * s;
+	tmp.y = v.y * s;
+	tmp.z = v.z * s;
+	return tmp;
+}
+
 int vec3fCompare(Vec3f a, Vec3f b) {
 	return ( nearlyEqualF(a.x,b.x)
 		&& nearlyEqualF(a.y,b.y)

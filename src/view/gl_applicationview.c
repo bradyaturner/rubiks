@@ -1,9 +1,11 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdarg.h>
 #include <GLFW/glfw3.h>
 
 #include "rubiks.h"
 #include "view/rubiksview.h"
+#include "controller/rubikscontroller.h"
 #include "cube.h"
 #include "view/cubeview.h"
 #include "vector.h"
@@ -13,6 +15,8 @@
 #define ROTATION_SPEED_MAX 25
 #define ROTATION_SPEED_MIN 0.1
 #define ROTATION_SPEED_INCREMENT 1
+
+int animationsOn = 1;
 
 // OpenGL/GLFW functions
 void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -24,6 +28,7 @@ void printHelpText();
 void increaseRotationSpeed();
 void decreaseRotationSpeed();
 void resetRotationSpeed();
+void rc_toggleAnimations();
 
 // Drawing functions
 void drawAxisLines();
@@ -39,6 +44,11 @@ Rubiks rubiksCube;
 int debug = 0;
 int demoMode = 0;
 double rotationSpeed = ROTATION_SPEED_DEFAULT;
+
+void rc_toggleAnimations() {
+	animationsOn = !animationsOn;
+	log_info("Animations %s\n", animationsOn ? "ON" : "OFF");
+}
 
 void display(){
 
@@ -142,8 +152,7 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 			}
 			break;
 		case GLFW_KEY_A:
-			animationsOn = !animationsOn;
-			printf("Animations %s\n", animationsOn ? "ON" : "OFF");
+			rc_toggleAnimations();
 			break;
 		case GLFW_KEY_EQUAL:
 			if (mods==0) {
@@ -173,54 +182,54 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		case GLFW_KEY_1:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rc_beginFaceRotation(&rubiksCube, LEFT_FACE, CLOCKWISE);
+					rc_beginFaceRotation(&rubiksCube, LEFT_FACE, CLOCKWISE, !animationsOn);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rc_beginFaceRotation(&rubiksCube, LEFT_FACE, COUNTERCLOCKWISE);
+					rc_beginFaceRotation(&rubiksCube, LEFT_FACE, COUNTERCLOCKWISE, !animationsOn);
 				}
 			}
 			break;
 		case GLFW_KEY_2:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rc_beginFaceRotation(&rubiksCube, RIGHT_FACE, CLOCKWISE);
+					rc_beginFaceRotation(&rubiksCube, RIGHT_FACE, CLOCKWISE, !animationsOn);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rc_beginFaceRotation(&rubiksCube, RIGHT_FACE, COUNTERCLOCKWISE);
+					rc_beginFaceRotation(&rubiksCube, RIGHT_FACE, COUNTERCLOCKWISE, !animationsOn);
 				}
 			}
 			break;
 		case GLFW_KEY_3:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rc_beginFaceRotation(&rubiksCube, BOTTOM_FACE, CLOCKWISE);
+					rc_beginFaceRotation(&rubiksCube, BOTTOM_FACE, CLOCKWISE, !animationsOn);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rc_beginFaceRotation(&rubiksCube, BOTTOM_FACE, COUNTERCLOCKWISE);
+					rc_beginFaceRotation(&rubiksCube, BOTTOM_FACE, COUNTERCLOCKWISE, !animationsOn);
 				}
 			}
 			break;
 		case GLFW_KEY_4:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rc_beginFaceRotation(&rubiksCube, TOP_FACE, CLOCKWISE);
+					rc_beginFaceRotation(&rubiksCube, TOP_FACE, CLOCKWISE, !animationsOn);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rc_beginFaceRotation(&rubiksCube, TOP_FACE, COUNTERCLOCKWISE);
+					rc_beginFaceRotation(&rubiksCube, TOP_FACE, COUNTERCLOCKWISE, !animationsOn);
 				}
 			}
 			break;
 		case GLFW_KEY_5:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rc_beginFaceRotation(&rubiksCube, FRONT_FACE, CLOCKWISE);
+					rc_beginFaceRotation(&rubiksCube, FRONT_FACE, CLOCKWISE, !animationsOn);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rc_beginFaceRotation(&rubiksCube, FRONT_FACE, COUNTERCLOCKWISE);
+					rc_beginFaceRotation(&rubiksCube, FRONT_FACE, COUNTERCLOCKWISE, !animationsOn);
 				}
 			}
 			break;
 		case GLFW_KEY_6:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rc_beginFaceRotation(&rubiksCube, BACK_FACE, CLOCKWISE);
+					rc_beginFaceRotation(&rubiksCube, BACK_FACE, CLOCKWISE, !animationsOn);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rc_beginFaceRotation(&rubiksCube, BACK_FACE, COUNTERCLOCKWISE);
+					rc_beginFaceRotation(&rubiksCube, BACK_FACE, COUNTERCLOCKWISE, !animationsOn);
 				}
 			}
 			break;
@@ -267,13 +276,13 @@ int glapp_run(){
 	rc_initialize(&rubiksCube);
 
 	if (!glfwInit()) {
-		exit(EXIT_FAILURE);
+		return EXIT_FAILURE;
 	}
 
 	window = glfwCreateWindow(800, 800, "Rubik's Cube", NULL, NULL);
 	if (!window) {
 		log_fatal("%s\n","Problem creating window!");
-		exit(1);
+		return 1;
 	}
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1);
@@ -291,7 +300,7 @@ int glapp_run(){
 
 		if (demoMode) {
 			if(!rc_isRotating()) {
-				rc_beginFaceRotation(&rubiksCube, rand()%NUM_FACES, rand()%2==0 ? 1:-1);
+				rc_beginFaceRotation(&rubiksCube, rand()%NUM_FACES, rand()%2==0 ? 1:-1, !animationsOn);
 			}
 		}
 
@@ -303,5 +312,3 @@ int glapp_run(){
 	glfwTerminate();
 	return EXIT_SUCCESS;
 }
-
-
