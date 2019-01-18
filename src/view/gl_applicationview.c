@@ -135,7 +135,7 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		case GLFW_KEY_S:
 			rc_shuffle(&rubiksCube, 20);
 			break;
-		case GLFW_KEY_R:
+		case GLFW_KEY_I:
 			rc_reset(&rubiksCube);
 			break;
 		case GLFW_KEY_H:
@@ -144,7 +144,7 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		case GLFW_KEY_P:
 			resetDebugInfo();
 			break;
-		case GLFW_KEY_D:
+		case GLFW_KEY_C:
 			if (mods==0) {
 				debug = !debug;
 			} else if (mods == GLFW_MOD_SHIFT) {
@@ -180,6 +180,7 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 			rotate.x -= 5;
 			break;
 		case GLFW_KEY_1:
+		case GLFW_KEY_L:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
 					rc_beginFaceRotation(&rubiksCube, LEFT_FACE, CLOCKWISE, !animationsOn);
@@ -189,6 +190,7 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 			}
 			break;
 		case GLFW_KEY_2:
+		case GLFW_KEY_R:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
 					rc_beginFaceRotation(&rubiksCube, RIGHT_FACE, CLOCKWISE, !animationsOn);
@@ -198,6 +200,7 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 			}
 			break;
 		case GLFW_KEY_3:
+		case GLFW_KEY_D:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
 					rc_beginFaceRotation(&rubiksCube, BOTTOM_FACE, CLOCKWISE, !animationsOn);
@@ -207,6 +210,7 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 			}
 			break;
 		case GLFW_KEY_4:
+		case GLFW_KEY_U:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
 					rc_beginFaceRotation(&rubiksCube, TOP_FACE, CLOCKWISE, !animationsOn);
@@ -216,6 +220,7 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 			}
 			break;
 		case GLFW_KEY_5:
+		case GLFW_KEY_F:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
 					rc_beginFaceRotation(&rubiksCube, FRONT_FACE, CLOCKWISE, !animationsOn);
@@ -225,6 +230,7 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 			}
 			break;
 		case GLFW_KEY_6:
+		case GLFW_KEY_B:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
 					rc_beginFaceRotation(&rubiksCube, BACK_FACE, CLOCKWISE, !animationsOn);
@@ -247,8 +253,8 @@ void printHelpText() {
 	printf("\tGeneral:\n");
 	printf("\t\th: print this dialog\n");
 	printf("\t\tq/ESC: quit\n");
-	printf("\t\td: enable/disable debug mode\n");
-	printf("\t\tD: enable/disable demo mode\n");
+	printf("\t\tc: enable/disable debug mode\n");
+	printf("\t\tC: enable/disable demo mode\n");
 	printf("\t\ta: enable/disable animations\n");
 	printf("\t\t+: increase rotation speed\n");
 	printf("\t\t-: decrease rotation speed\n");
@@ -263,13 +269,13 @@ void printHelpText() {
 
 	printf("\tRotation keys (key rotates clockwise, shift+key rotates ccw):\n");
 	printf("\t\ts: shuffle\n");
-	printf("\t\tr: reset\n");
-	printf("\t\t1: left face\n");
-	printf("\t\t2: right face\n");
-	printf("\t\t3: bottom face\n");
-	printf("\t\t4: top face\n");
-	printf("\t\t5: front face\n");
-	printf("\t\t6: back face\n");
+	printf("\t\ti: initialize\n");
+	printf("\t\tl/1: left face\n");
+	printf("\t\tr/2: right face\n");
+	printf("\t\td/3: down face\n");
+	printf("\t\tu/4: up face\n");
+	printf("\t\tf/5: front face\n");
+	printf("\t\tb/6: back face\n");
 }
 
 int glapp_run(){
