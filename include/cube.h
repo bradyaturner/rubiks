@@ -26,6 +26,15 @@ typedef struct {
 	Vec3f normal;
 } CubeFaceData;
 
+static const CubeFaceData faceData[NUM_FACES] = {
+	{ 'L', 'R', {1.0, 0.0, 0.0}, {90, 0, 0}, {-1, 0, 0} },
+	{ 'R', 'O', {1.0, 0.65, 0.0}, {-90, 0, 0}, {1, 0, 0} },
+	{ 'D', 'Y', {1.0, 1.0, 0.0}, {0, 90, 0}, {0, -1, 0} },
+	{ 'U', 'W', {1.0, 1.0, 1.0}, {0, -90, 0}, {0, 1, 0} },
+	{ 'F', 'B', {0.0, 0.0, 1.0}, {0, 0, 90}, {0, 0, -1} },
+	{ 'B', 'G', {0.0, 1.0, 0.0}, {0, 0, -90}, {0, 0, 1} },
+};
+
 typedef struct {
 	CubeFace faces[NUM_FACES];
 	int id;
@@ -34,22 +43,10 @@ typedef struct {
 	Quaternion quat;
 } Cube;
 
-static const CubeFaceData faceData[NUM_FACES] = {
-	{ 'L', 'R', {1.0, 0.0, 0.0}, {90, 0, 0}, {-1, 0, 0} },
-	{ 'R', 'O', {1.0, 0.65, 0.0}, {-90, 0, 0}, {1, 0, 0} },
-	{ 'D', 'Y', {1.0, 1.0, 0.0}, {0, 90, 0}, {0, -1, 0} },
-	{ 'T', 'W', {1.0, 1.0, 1.0}, {0, -90, 0}, {0, 1, 0} },
-	{ 'F', 'B', {0.0, 0.0, 1.0}, {0, 0, 90}, {0, 0, -1} },
-	{ 'B', 'G', {0.0, 1.0, 0.0}, {0, 0, -90}, {0, 0, 1} },
-};
-
-void initializeCube(Cube *cube, int id, int position);
-void resetCube(Cube *cube);
-void rotateCube(Cube *cube, const Vec3i degrees);
-void resetRotation(Cube *cube);
-void resetPosition(Cube *cube);
-float* getColorArray(const Cube cube);
-int isCubeInitPos(Cube *cube);
-int getShownFace(Cube *cube, int face);
+void cube_initialize(Cube *cube, int id, int position);
+void cube_reset(Cube *cube);
+void cube_rotate(Cube *cube, const Vec3i degrees);
+float* cube_getColorArray(const Cube cube);
+int cube_getShownFace(Cube *cube, int face);
 
 #endif

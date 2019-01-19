@@ -3,25 +3,28 @@
 
 #include <math.h>
 
+
+// util methods
+float degToRad(float deg);
+
+void quatInit(Quaternion *quat, float x, float y, float z, float w);
+Quaternion quat_conjugate(Quaternion *quat);
+Quaternion quat_inverse(Quaternion *quat);
+Quaternion quat_normalize(Quaternion *quat);
+float quat_magnitude(Quaternion *quat);
+
 float degToRad(float deg) {
 	return deg * M_PI / 180.0;
 }
 
-void quatInitIdentity(Quaternion *quat) {
+void quat_initIdentity(Quaternion *quat) {
 	quat->x = 0;
 	quat->y = 0;
 	quat->z = 0;
 	quat->w = 1;
 }
 
-void quatInitRotations(Quaternion *quat, Vec3f rotations) {
-	quat->x = rotations.x;
-	quat->y = rotations.y;
-	quat->z = rotations.z;
-	quat->w = 1;
-}
-
-void quatInitEuler(Quaternion *quat, Vec3f angles) {
+void quat_initEuler(Quaternion *quat, Vec3f angles) {
 	float heading = degToRad(angles.y);
 	float attitude = degToRad(angles.z);
 	float bank = degToRad(angles.x);
@@ -47,38 +50,38 @@ void quatInit(Quaternion *quat, float x, float y, float z, float w) {
 	quat->w = w;
 }
 
-Quaternion quatConjugate(Quaternion *quat) {
+Quaternion quat_conjugate(Quaternion *quat) {
 	Quaternion tmp = {-quat->x, -quat->y, -quat->z, quat->w};
 	return tmp;
 }
 
-Quaternion quatInverse(Quaternion *quat) {
-	return quatConjugate(quat);
+Quaternion quat_inverse(Quaternion *quat) {
+	return quat_conjugate(quat);
 }
 
-Quaternion quatNormalize(Quaternion *quat) {
-	float mag = quatMagnitude(quat);
+Quaternion quat_normalize(Quaternion *quat) {
+	float mag = quat_magnitude(quat);
 	Quaternion result;
 	quatInit(&result, quat->x/mag, quat->y/mag, quat->z/mag, quat->w/mag);
 	return result;
 }
 
-Quaternion quatMultiply(Quaternion *left, Quaternion *right) {
-	Quaternion tmp = quatMultiplyNoNormal(left, right);
-	return quatNormalize(&tmp);
+Quaternion quat_multiply(Quaternion *left, Quaternion *right) {
+	Quaternion tmp = quat_multiplyNoNormal(left, right);
+	return quat_normalize(&tmp);
 }
 
 // Multiply vector by quaternion
-Vec3f quatVecMultiply(Quaternion *left, Vec3f right) {
+Vec3f quat_vecMultiply(Quaternion *left, Vec3f right) {
 	Quaternion quatVec = {right.x, right.y, right.z, 0};
-	Quaternion inv = quatInverse(left);
-	Quaternion rhs = quatMultiplyNoNormal(&inv, &quatVec);
-	Quaternion tmp = quatMultiplyNoNormal(&rhs, left);
+	Quaternion inv = quat_inverse(left);
+	Quaternion rhs = quat_multiplyNoNormal(&inv, &quatVec);
+	Quaternion tmp = quat_multiplyNoNormal(&rhs, left);
 	Vec3f tmp2 = {tmp.x, tmp.y, tmp.z};
 	return tmp2;
 }
 
-Quaternion quatMultiplyNoNormal(Quaternion *left, Quaternion *right) {
+Quaternion quat_multiplyNoNormal(Quaternion *left, Quaternion *right) {
 	float x = left->x*right->w + left->y*right->z - left->z*right->y + left->w*right->x;
 	float y = -left->x*right->z + left->y*right->w + left->z*right->x + left->w*right->y;
 	float z = left->x*right->y - left->y*right->x + left->z*right->w + left->w*right->z;
@@ -87,27 +90,13 @@ Quaternion quatMultiplyNoNormal(Quaternion *left, Quaternion *right) {
 	return tmp;
 }
 
-float quatMagnitude(Quaternion *quat) {
+float quat_magnitude(Quaternion *quat) {
 	float l = quat->x*quat->x + quat->y*quat->y
 		+ quat->z*quat->z + quat->w*quat->w;
 	return sqrt(l);
 }
 
-Quaternion quatFromAxis(Vec3f axis, float angle) {
-	float sinAngle = sin(angle/2);
-	Vec3f normalized = vec3fNormalize(axis);
-	Quaternion quat;
-	quatInit(&quat, normalized.x*sinAngle, normalized.y*sinAngle,
-		normalized.z*sinAngle, cos(angle/2));
-	return quatNormalize(&quat);
-}
-
-float quatDotProduct(Quaternion *left, Quaternion *right) {
-	return left->x*right->x + left->y*right->y
-		+ left->z*right->z + left->w*right->w;
-}
-
-float* quatToMatrix(Quaternion *quat) {
+float* quat_toMatrix(Quaternion *quat) {
 	static float mat[16];
 	// initialize identity matrix
 	for (int i=0; i<16; i++) {
@@ -130,7 +119,7 @@ float* quatToMatrix(Quaternion *quat) {
 	return mat;
 }
 
-void quatSetEqual(Quaternion *q1, Quaternion *q2) {
+void quat_setEqual(Quaternion *q1, Quaternion *q2) {
 	q1->x = q2->x;
 	q1->y = q2->y;
 	q1->z = q2->z;

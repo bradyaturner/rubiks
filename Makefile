@@ -1,45 +1,43 @@
 CC=gcc
-CFLAGS= -g -Wall -Werror
+CFLAGS= -g -Wall -Werror -I $(INCDIR)
+LDFLAGS = $(libgl) -lm
+
+SRCDIR		:= src
+INCDIR		:= include
+BUILDDIR	:= objects
+TARGETDIR	:= bin
+DEPDIR		:= dep
+SRCEXT		:= c
+DEPEXT		:= d
+OBJEXT		:= o
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
-	LIBS = -lGL -lglfw -lm
+	libgl = -lGL -lglfw
 endif
 ifeq ($(UNAME_S),Darwin) # macOS
-	FRAMEWORK = -framework OpenGL -I/usr/local/include -lglfw
+	libgl = -framework OpenGL -I/usr/local/include -lglfw
 endif
 
-APP= rubiks
- 
+APP = $(TARGETDIR)/rubiks
 all: $(APP)
+csrc = $(wildcard $(SRCDIR)/*.$(SRCEXT) $(SRCDIR)/**/*.$(SRCEXT))
+obj = $(csrc:.$(SRCEXT)=.$(OBJEXT))
+dep = $(obj:.$(OBJEXT)=.$(DEPEXT)) # one dependency file for each source
 
-$(APP): main.o rubiks.o cube.o vector.o utils.o quaternion.o
-	$(CC) $(FRAMEWORK) $(CFLAGS) -o $@ main.o rubiks.o cube.o vector.o utils.o quaternion.o $(LIBS)
+-include $(dep)	# include all dep files in the Makefile
 
-test:	test.o singlecube.o cube.o vector.o utils.o quaternion.o
-	$(CC) $(FRAMEWORK) $(CFLAGS) -o $@ test.o singlecube.o cube.o vector.o utils.o quaternion.o $(LIBS)
+$(APP): $(obj)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-quat:	quattest.o vector.o utils.o quaternion.o logger.h
-	$(CC) $(FRAMEWORK) $(CFLAGS) -o $@ quattest.o vector.o utils.o quaternion.o $(LIBS)
+# rule to generate a dep file by using the C preprocessor
+%.$(DEPEXT): %.$(SRCEXT)
+	@$(CC) $(CFLAGS) $< -MM -MT $(@:.$(DEPEXT)=.$(OBJEXT)) > $@
 
-singlecube.o:	singlecube.c cube.h vector.h logger.h
-	$(CC) $(CFLAGS) -c singlecube.c
-
-rubiks.o:	rubiks.c cube.h vector.h utils.h logger.h
-	$(CC) $(CFLAGS) -c rubiks.c
-
-cube.o:	cube.c cube.h vector.h utils.h
-	$(CC) $(CFLAGS) -c cube.c
-
-quaternion.o:	quaternion.c quaternion.h vector.h
-	$(CC) $(CFLAGS) -c quaternion.c
-
-vector.o:	vector.c vector.h utils.h
-	$(CC) $(CFLAGS) -c vector.c
-
-utils.o:	utils.c utils.h
-	$(CC) $(CFLAGS) -c utils.c
-
+.PHONY: clean
 clean:
-	rm -f $(APP) test quat
-	rm -f *.o
+	rm -f $(obj) $(APP) $(dep)
+
+.PHONY: cleandep
+cleandep:
+	rm -f $(dep)
