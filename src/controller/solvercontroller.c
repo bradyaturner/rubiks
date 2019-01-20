@@ -43,7 +43,7 @@ int checkCurrentState(Rubiks *rubiks) {
 }
 
 int checkStep(Rubiks *rubiks, int stepNum) {
-	log_info("Checking step: %s\n", steps[stepNum].name);
+	log_debug("Checking step: %s\n", steps[stepNum].name);
 	int correct = (*steps[stepNum].checkFunction)(rubiks);
 	log_info("Step %s is %ssolved\n", steps[stepNum].name, (correct ? "" : "NOT "));
 	return correct;
@@ -55,7 +55,7 @@ int checkCubesPosAndRot(Rubiks *rubiks, int *ids, int idsLength) {
 		Cube *cube = rc_getCubeById(rubiks, ids[i]);
 		int correctPos = cube_checkPosition(cube);
 		int correctRot = cube_checkRotation(cube);
-		log_info("Cube %i correct position: %s, correct rotation: %s\n",
+		log_debug("Cube %i correct position: %s, correct rotation: %s\n",
 			cube->id, correctPos ? "YES":"NO", correctRot ? "YES":"NO"
 		);
 		allCorrect = correctPos && correctRot && allCorrect;
