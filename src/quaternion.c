@@ -1,27 +1,25 @@
 #include "quaternion.h"
 #include "vector.h"
-
+#include <float.h>
 #include <math.h>
 
 
 // util methods
 float degToRad(float deg);
 
-void quatInit(Quaternion *quat, float x, float y, float z, float w);
+void quat_init(Quaternion *quat, float x, float y, float z, float w);
 Quaternion quat_conjugate(Quaternion *quat);
 Quaternion quat_inverse(Quaternion *quat);
 Quaternion quat_normalize(Quaternion *quat);
 float quat_magnitude(Quaternion *quat);
+float quat_dotProduct(Quaternion *left, Quaternion *right);
 
 float degToRad(float deg) {
 	return deg * M_PI / 180.0;
 }
 
 void quat_initIdentity(Quaternion *quat) {
-	quat->x = 0;
-	quat->y = 0;
-	quat->z = 0;
-	quat->w = 1;
+	quat_init(quat, 0, 0, 0, 1);
 }
 
 void quat_initEuler(Quaternion *quat, Vec3f angles) {
@@ -43,7 +41,7 @@ void quat_initEuler(Quaternion *quat, Vec3f angles) {
 	quat->z = c1*s2*c3 - s1*c2*s3;
 }
 
-void quatInit(Quaternion *quat, float x, float y, float z, float w) {
+void quat_init(Quaternion *quat, float x, float y, float z, float w) {
 	quat->x = x;
 	quat->y = y;
 	quat->z = z;
@@ -62,7 +60,7 @@ Quaternion quat_inverse(Quaternion *quat) {
 Quaternion quat_normalize(Quaternion *quat) {
 	float mag = quat_magnitude(quat);
 	Quaternion result;
-	quatInit(&result, quat->x/mag, quat->y/mag, quat->z/mag, quat->w/mag);
+	quat_init(&result, quat->x/mag, quat->y/mag, quat->z/mag, quat->w/mag);
 	return result;
 }
 
@@ -124,4 +122,15 @@ void quat_setEqual(Quaternion *q1, Quaternion *q2) {
 	q1->y = q2->y;
 	q1->z = q2->z;
 	q1->w = q2->w;
+}
+
+int quat_checkEqual(Quaternion *q1, Quaternion *q2) {
+	float dot = quat_dotProduct(q1, q2);
+	float absdot = fabsf(dot);
+	return absdot > 1-FLT_EPSILON;
+}
+
+float quat_dotProduct(Quaternion *left, Quaternion *right) {
+	return left->x*right->x + left->y*right->y
+		+ left->z*right->z + left->w*right->w;
 }
