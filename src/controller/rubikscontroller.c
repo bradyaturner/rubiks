@@ -51,23 +51,23 @@ void rc_updateFaceRotations(Rubiks *rubiks, double rotationSpeed) {
 		}
 	}
 	if (updatedFaces > 1) {
-		log_fatal("%s\n", "More than one face rotating at once!");
+		log_fatal("%s", "More than one face rotating at once!");
 	}
 }
 
 void rc_beginFaceRotation(Rubiks *rubiks, int face, int direction, int instant) {
-	log_debug("Begin face rotation: face: %i, direction: %i [instant=%s]\n",
+	log_debug("Begin face rotation: face: %i, direction: %i [instant=%s]",
 		face, direction, instant ? "yes" : "no"
 	);
 	if (direction != CLOCKWISE && direction != COUNTERCLOCKWISE) {
-		log_error("Invalid direction %i for face %i\n", direction, face);
+		log_error("Invalid direction %i for face %i", direction, face);
 		return;
 	}
 	if (face >= NUM_FACES || face < 0) {
-		log_error("Invalid face to rotate: %i\n", face);
+		log_error("Invalid face to rotate: %i", face);
 	}
 
-	printf("%c%s\n", faceData[face].name, direction==1?"":"`");
+	log_debug("%c%s", faceData[face].name, direction==1?"":"`");
 
 	if (!rc_isRotating()) {
 		if (instant) {

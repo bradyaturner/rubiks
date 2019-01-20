@@ -6,19 +6,19 @@ static void cube_resetRotation(Cube *cube);
 static void cube_resetPosition(Cube *cube);
 
 void cube_rotate(Cube *cube, const Vec3i degrees) {
-	log_trace("[CUBEID: %i] Rotating cube at position: %i\n", cube->id, cube->position);
-	log_trace("[CUBEID: %i] Cube quaternion before: %f, %f, %f, %f...\n", cube->id, cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);
-	log_trace("[CUBEID: %i] Rotating degrees: %i, %i, %i\n", cube->id, degrees.x, degrees.y, degrees.z);
+	log_trace("[CUBEID: %i] Rotating cube at position: %i", cube->id, cube->position);
+	log_trace("[CUBEID: %i] Cube quaternion before: %f, %f, %f, %f...", cube->id, cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);
+	log_trace("[CUBEID: %i] Rotating degrees: %i, %i, %i", cube->id, degrees.x, degrees.y, degrees.z);
 
 	Quaternion tmp;
 	Vec3f rot = {degrees.x, degrees.y, degrees.z};
 	quat_initEuler(&tmp, rot);
 
-	log_trace("[CUBEID: %i] Created temp quaternion from euler angles: %f, %f, %f, %f\n", cube->id, tmp.x, tmp.y, tmp.z, tmp.w);
+	log_trace("[CUBEID: %i] Created temp quaternion from euler angles: %f, %f, %f, %f", cube->id, tmp.x, tmp.y, tmp.z, tmp.w);
 	Quaternion result = quat_multiply(&cube->quat, &tmp);
 	quat_setEqual(&cube->quat, &result);
 
-	log_trace("[CUBEID: %i] Cube quaternion after: %f, %f, %f, %f...\n", cube->id, cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);
+	log_trace("[CUBEID: %i] Cube quaternion after: %f, %f, %f, %f...", cube->id, cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);
 }
 
 float* cube_getColorArray(const Cube cube) {
@@ -63,16 +63,15 @@ int isCubeInitPos(Cube *cube) {
 
 int cube_getShownFace(Cube *cube, int face) {
 	for(int i=0; i<NUM_FACES; i++) {
-		printf("\n\n");
-		log_info("cube quat: %f %f %f %f\n", cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);
+		log_debug("cube quat: %f %f %f %f", cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);
 		Vec3f tmp2 = quat_vecMultiply(&cube->quat, faceData[i].normal);
 
-		log_info("Vec for face:%c: before rotate  x:%f y:%f z:%f\n",
+		log_debug("Vec for face:%c: before rotate  x:%f y:%f z:%f",
 			faceData[i].color, faceData[i].normal.x, faceData[i].normal.y, faceData[i].normal.z
 		);
-		log_info("Vec for face:%c: after rotate   x:%f y:%f z:%f\n", faceData[i].color, tmp2.x, tmp2.y, tmp2.z);
+		log_debug("Vec for face:%c: after rotate   x:%f y:%f z:%f", faceData[i].color, tmp2.x, tmp2.y, tmp2.z);
 		if (vec3fCompare(tmp2, faceData[face].normal)) {
-			log_info("***Cube face %c facing direction %c !\n", faceData[i].color, faceData[face].name);
+			log_debug("***Cube face %c facing direction %c !", faceData[i].color, faceData[face].name);
 			return i;
 		}
 	}
