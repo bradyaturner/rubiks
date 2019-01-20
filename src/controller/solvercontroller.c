@@ -12,7 +12,7 @@ int checkStep(Rubiks *rubiks, int stepNum);
 int checkWhiteCross(Rubiks *rubiks);
 int checkWhiteCorners(Rubiks *rubiks);
 int checkMiddleLayer(Rubiks *rubiks);
-int checkTopFace(Rubiks *rubiks);
+int checkDownFace(Rubiks *rubiks);
 int checkFinalLayer(Rubiks *rubiks);
 
 typedef struct{
@@ -24,7 +24,7 @@ Step steps[NUM_STEPS] = {
 	{"WHITE CROSS", &checkWhiteCross},
 	{"WHITE CORNERS", &checkWhiteCorners},
 	{"MIDDLE LAYER", &checkMiddleLayer},
-	{"TOP FACE", &checkTopFace},
+	{"DOWN FACE", &checkDownFace},
 	{"FINAL LAYER", &checkFinalLayer}
 };
 
@@ -80,7 +80,7 @@ int checkMiddleLayer(Rubiks* rubiks) {
 
 // only the outside 8 cubes, left pieces can't move and rotation doesn't matter
 static int topLayerCubeIds[8] = {18, 19, 20, 21, 23, 24, 25, 26};
-int checkTopFace(Rubiks* rubiks) {
+int checkDownFace(Rubiks* rubiks) {
 	// TODO position and rotation don't matter yet, just matters that yellow is facing up
 	return checkCubesPosAndRot(rubiks, topLayerCubeIds, 8); // change this
 }
