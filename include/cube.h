@@ -24,15 +24,17 @@ typedef struct {
 	RGB3f rgb;
 	Vec3i rotation;
 	Vec3f normal;
+	int faceToLeft;
+	int faceToRight;
 } CubeFaceData;
 
 static const CubeFaceData faceData[NUM_FACES] = {
-	{ 'L', 'R', {1.0, 0.0, 0.0}, {90, 0, 0}, {-1, 0, 0} },
-	{ 'R', 'O', {1.0, 0.65, 0.0}, {-90, 0, 0}, {1, 0, 0} },
-	{ 'D', 'Y', {1.0, 1.0, 0.0}, {0, 90, 0}, {0, -1, 0} },
-	{ 'U', 'W', {1.0, 1.0, 1.0}, {0, -90, 0}, {0, 1, 0} },
-	{ 'F', 'B', {0.0, 0.0, 1.0}, {0, 0, 90}, {0, 0, -1} },
-	{ 'B', 'G', {0.0, 1.0, 0.0}, {0, 0, -90}, {0, 0, 1} },
+	{ 'L', 'R', {1.0, 0.0, 0.0}, {90, 0, 0}, {-1, 0, 0}, BACK_FACE, FRONT_FACE },
+	{ 'R', 'O', {1.0, 0.65, 0.0}, {-90, 0, 0}, {1, 0, 0}, FRONT_FACE, BACK_FACE },
+	{ 'D', 'Y', {1.0, 1.0, 0.0}, {0, 90, 0}, {0, -1, 0}, LEFT_FACE, RIGHT_FACE },
+	{ 'U', 'W', {1.0, 1.0, 1.0}, {0, -90, 0}, {0, 1, 0}, LEFT_FACE, RIGHT_FACE },
+	{ 'F', 'B', {0.0, 0.0, 1.0}, {0, 0, 90}, {0, 0, -1}, LEFT_FACE, RIGHT_FACE },
+	{ 'B', 'G', {0.0, 1.0, 0.0}, {0, 0, -90}, {0, 0, 1}, RIGHT_FACE, LEFT_FACE },
 };
 
 typedef struct {
