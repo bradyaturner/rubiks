@@ -19,10 +19,6 @@ float degToRad(float deg) {
 }
 
 void quat_initIdentity(Quaternion *quat) {
-	//quat->x = 0;
-	//quat->y = 0;
-	//quat->z = 0;
-	//quat->w = 1;
 	quat_init(quat, 0, 0, 0, 1);
 }
 
