@@ -8,6 +8,11 @@
 #define QUAT_IDENTITY_Z 0
 #define QUAT_IDENTITY_W 1
 
+static Quaternion identityQuat = {
+	QUAT_IDENTITY_X, QUAT_IDENTITY_Y,
+	QUAT_IDENTITY_Z, QUAT_IDENTITY_W
+};
+
 // util methods
 float degToRad(float deg);
 
@@ -134,6 +139,10 @@ int quat_checkEqual(Quaternion *q1, Quaternion *q2) {
 	float dot = quat_dotProduct(q1, q2);
 	float absdot = fabsf(dot);
 	return absdot > 1-FLT_EPSILON;
+}
+
+int quat_checkIdentity(Quaternion *q1) {
+	return quat_checkEqual(q1, &identityQuat);
 }
 
 float quat_dotProduct(Quaternion *left, Quaternion *right) {

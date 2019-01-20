@@ -3,11 +3,6 @@
 
 #include "vector.h"
 
-#define QUAT_IDENTITY_X 0
-#define QUAT_IDENTITY_Y 0
-#define QUAT_IDENTITY_Z 0
-#define QUAT_IDENTITY_W 1
-
 // adapted from https://github.com/IRSmoh/OpenGL_MathDemo/blob/master/src/Quaternion.cpp
 
 typedef struct {
@@ -27,5 +22,6 @@ Quaternion quat_multiplyNoNormal(Quaternion *left, Quaternion *right);
 float* quat_toMatrix(Quaternion *quat);
 void quat_setEqual(Quaternion *q1, Quaternion *q2);
 int quat_checkEqual(Quaternion *q1, Quaternion *q2);
+int quat_checkIdentity(Quaternion *q1);
 
 #endif
