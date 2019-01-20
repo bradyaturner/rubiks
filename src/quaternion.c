@@ -125,15 +125,9 @@ void quat_setEqual(Quaternion *q1, Quaternion *q2) {
 }
 
 int quat_checkEqual(Quaternion *q1, Quaternion *q2) {
-	//return q1->x == q2->x &&
-	//	q1->y == q2->y &&
-	//	q1->z == q2->z &&
-	//	q1->w == q2->w
-	//;
 	float dot = quat_dotProduct(q1, q2);
 	float absdot = fabsf(dot);
 	return absdot > 1-FLT_EPSILON;
-
 }
 
 float quat_dotProduct(Quaternion *left, Quaternion *right) {
