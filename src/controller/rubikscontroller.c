@@ -18,9 +18,9 @@ Vec3f rc_determineCubeCoord(Cube *cube) {
 		coord.x = 0;
 	}
 
-	if (rc_checkCubeInFace(cube, BOTTOM_FACE)) {
+	if (rc_checkCubeInFace(cube, DOWN_FACE)) {
 		coord.y = -1;
-	} else if (rc_checkCubeInFace(cube, TOP_FACE)) {
+	} else if (rc_checkCubeInFace(cube, UP_FACE)) {
 		coord.y = 1;
 	} else {
 		coord.y = 0;
