@@ -3,6 +3,10 @@
 #include <float.h>
 #include <math.h>
 
+#define QUAT_IDENTITY_X 0
+#define QUAT_IDENTITY_Y 0
+#define QUAT_IDENTITY_Z 0
+#define QUAT_IDENTITY_W 1
 
 // util methods
 float degToRad(float deg);
@@ -19,7 +23,9 @@ float degToRad(float deg) {
 }
 
 void quat_initIdentity(Quaternion *quat) {
-	quat_init(quat, 0, 0, 0, 1);
+	quat_init(quat, QUAT_IDENTITY_X, QUAT_IDENTITY_Y,
+		QUAT_IDENTITY_Z, QUAT_IDENTITY_W
+	);
 }
 
 void quat_initEuler(Quaternion *quat, Vec3f angles) {

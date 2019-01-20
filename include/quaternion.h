@@ -3,6 +3,11 @@
 
 #include "vector.h"
 
+#define QUAT_IDENTITY_X 0
+#define QUAT_IDENTITY_Y 0
+#define QUAT_IDENTITY_Z 0
+#define QUAT_IDENTITY_W 1
+
 // adapted from https://github.com/IRSmoh/OpenGL_MathDemo/blob/master/src/Quaternion.cpp
 
 typedef struct {

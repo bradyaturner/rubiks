@@ -9,6 +9,7 @@
 #include "rubiks.h"
 #include "view/rubiksview.h"
 #include "controller/rubikscontroller.h"
+#include "controller/solvercontroller.h"
 #include "cube.h"
 #include "view/cubeview.h"
 #include "vector.h"
@@ -134,6 +135,9 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		case GLFW_KEY_ESCAPE:
 		case GLFW_KEY_Q:
 			glfwSetWindowShouldClose(window, 1);
+			break;
+		case GLFW_KEY_SPACE:
+			solver_checkSolved(&rubiksCube);
 			break;
 		case GLFW_KEY_S:
 			rc_shuffle(&rubiksCube, 20);
