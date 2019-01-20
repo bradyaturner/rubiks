@@ -22,5 +22,6 @@ Quaternion quat_multiplyNoNormal(Quaternion *left, Quaternion *right);
 float* quat_toMatrix(Quaternion *quat);
 void quat_setEqual(Quaternion *q1, Quaternion *q2);
 int quat_checkEqual(Quaternion *q1, Quaternion *q2);
+int quat_checkIdentity(Quaternion *q1);
 
 #endif

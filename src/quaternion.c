@@ -4,6 +4,15 @@
 #include <math.h>
 #define M_PI 3.14159265358979323846264338327
 
+#define QUAT_IDENTITY_X 0
+#define QUAT_IDENTITY_Y 0
+#define QUAT_IDENTITY_Z 0
+#define QUAT_IDENTITY_W 1
+
+static Quaternion identityQuat = {
+	QUAT_IDENTITY_X, QUAT_IDENTITY_Y,
+	QUAT_IDENTITY_Z, QUAT_IDENTITY_W
+};
 
 // util methods
 float degToRad(float deg);
@@ -20,7 +29,9 @@ float degToRad(float deg) {
 }
 
 void quat_initIdentity(Quaternion *quat) {
-	quat_init(quat, 0, 0, 0, 1);
+	quat_init(quat, QUAT_IDENTITY_X, QUAT_IDENTITY_Y,
+		QUAT_IDENTITY_Z, QUAT_IDENTITY_W
+	);
 }
 
 void quat_initEuler(Quaternion *quat, Vec3f angles) {
@@ -129,6 +140,10 @@ int quat_checkEqual(Quaternion *q1, Quaternion *q2) {
 	float dot = quat_dotProduct(q1, q2);
 	float absdot = fabsf(dot);
 	return absdot > 1-FLT_EPSILON;
+}
+
+int quat_checkIdentity(Quaternion *q1) {
+	return quat_checkEqual(q1, &identityQuat);
 }
 
 float quat_dotProduct(Quaternion *left, Quaternion *right) {

@@ -77,3 +77,11 @@ int cube_getShownFace(Cube *cube, int face) {
 	}
 	return -1;
 }
+
+int cube_checkPosition(Cube *cube) {
+	return (cube->position == cube->initialPosition);
+}
+
+int cube_checkRotation(Cube *cube) {
+	return quat_checkIdentity(&cube->quat);
+}
