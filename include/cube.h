@@ -9,8 +9,8 @@
 
 #define LEFT_FACE 0
 #define RIGHT_FACE 1
-#define BOTTOM_FACE 2
-#define TOP_FACE 3
+#define DOWN_FACE 2
+#define UP_FACE 3
 #define FRONT_FACE 4
 #define BACK_FACE 5
 

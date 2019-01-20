@@ -206,9 +206,9 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		case GLFW_KEY_D:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rc_beginFaceRotation(&rubiksCube, BOTTOM_FACE, CLOCKWISE, !animationsOn);
+					rc_beginFaceRotation(&rubiksCube, DOWN_FACE, CLOCKWISE, !animationsOn);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rc_beginFaceRotation(&rubiksCube, BOTTOM_FACE, COUNTERCLOCKWISE, !animationsOn);
+					rc_beginFaceRotation(&rubiksCube, DOWN_FACE, COUNTERCLOCKWISE, !animationsOn);
 				}
 			}
 			break;
@@ -216,9 +216,9 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		case GLFW_KEY_U:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rc_beginFaceRotation(&rubiksCube, TOP_FACE, CLOCKWISE, !animationsOn);
+					rc_beginFaceRotation(&rubiksCube, UP_FACE, CLOCKWISE, !animationsOn);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rc_beginFaceRotation(&rubiksCube, TOP_FACE, COUNTERCLOCKWISE, !animationsOn);
+					rc_beginFaceRotation(&rubiksCube, UP_FACE, COUNTERCLOCKWISE, !animationsOn);
 				}
 			}
 			break;
