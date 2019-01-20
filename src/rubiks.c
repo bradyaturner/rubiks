@@ -86,6 +86,13 @@ Cube* rc_getCubeAtPos(Rubiks *rubiks, int cubePosition) {
 	return cube;
 }
 
+Cube* rc_getCubeById(Rubiks *rubiks, int cubeId) {
+	if (cubeId < 0 || cubeId > NUM_CUBES-1) {
+		log_fatal("CUBE ID OUTSIDE RANGE! cubeId=%i\n", cubeId);
+	}
+	return &rubiks->cubes[cubeId];
+}
+
 void rc_initialize(Rubiks *rubiks) {
 	for (int i = 0; i<NUM_CUBES; i++) {
 		cube_initialize(&rubiks->cubes[i], i, i);
