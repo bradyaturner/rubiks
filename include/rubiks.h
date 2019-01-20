@@ -18,6 +18,7 @@ typedef struct {
 void rc_initialize(Rubiks *rubiks);
 void rc_reset(Rubiks *rubiks);
 Cube* rc_getCubeAtPos(Rubiks *rubiks, int cubePosition);
+Cube* rc_getCubeById(Rubiks *rubiks, int cubeId);
 
 // Control
 void rc_rotateFace(Rubiks *rubiks, int face, int direction);
