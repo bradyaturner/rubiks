@@ -78,13 +78,20 @@ int checkMiddleLayer(Rubiks* rubiks) {
 	return checkCubesPosAndRot(rubiks, middleLayerCubeIds, 4);
 }
 
-// only the outside 8 cubes, left pieces can't move and rotation doesn't matter
-static int topLayerCubeIds[8] = {18, 19, 20, 21, 23, 24, 25, 26};
 int checkDownFace(Rubiks* rubiks) {
-	// TODO position and rotation don't matter yet, just matters that yellow is facing up
-	return checkCubesPosAndRot(rubiks, topLayerCubeIds, 8); // change this
+	int correct = 1;
+	char faceColor = faceData[DOWN_FACE].color;
+	char faceColors[FACE_SIZE+1];
+	rc_getFaceColors(rubiks, DOWN_FACE, faceColors);
+	for (int i=0; i<FACE_SIZE; i++) {
+		correct = correct && (faceColors[i] == faceColor);
+	}
+	return correct;
 }
 
+// only the outside 8 cubes, left pieces can't move and rotation doesn't matter
+#define DOWN_FACE_NUM_CUBES 8
+static int downFaceCubeIds[DOWN_FACE_NUM_CUBES] = {18, 19, 20, 21, 23, 24, 25, 26};
 int checkFinalLayer(Rubiks* rubiks) {
-	return checkCubesPosAndRot(rubiks, topLayerCubeIds, 8);
+	return checkCubesPosAndRot(rubiks, downFaceCubeIds, DOWN_FACE_NUM_CUBES);
 }
