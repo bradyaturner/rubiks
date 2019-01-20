@@ -63,16 +63,15 @@ int isCubeInitPos(Cube *cube) {
 
 int cube_getShownFace(Cube *cube, int face) {
 	for(int i=0; i<NUM_FACES; i++) {
-		printf("\n\n");
-		log_info("cube quat: %f %f %f %f\n", cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);
+		log_debug("cube quat: %f %f %f %f\n", cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);
 		Vec3f tmp2 = quat_vecMultiply(&cube->quat, faceData[i].normal);
 
-		log_info("Vec for face:%c: before rotate  x:%f y:%f z:%f\n",
+		log_debug("Vec for face:%c: before rotate  x:%f y:%f z:%f\n",
 			faceData[i].color, faceData[i].normal.x, faceData[i].normal.y, faceData[i].normal.z
 		);
-		log_info("Vec for face:%c: after rotate   x:%f y:%f z:%f\n", faceData[i].color, tmp2.x, tmp2.y, tmp2.z);
+		log_debug("Vec for face:%c: after rotate   x:%f y:%f z:%f\n", faceData[i].color, tmp2.x, tmp2.y, tmp2.z);
 		if (vec3fCompare(tmp2, faceData[face].normal)) {
-			log_info("***Cube face %c facing direction %c !\n", faceData[i].color, faceData[face].name);
+			log_debug("***Cube face %c facing direction %c !\n", faceData[i].color, faceData[face].name);
 			return i;
 		}
 	}

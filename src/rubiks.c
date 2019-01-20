@@ -142,13 +142,13 @@ int rc_serialize(Rubiks *rubiks, char* out) {
 int rc_getFaceColors(Rubiks *rubiks, int face, char* colors) {
 	Cube* cubes[FACE_SIZE];
 	rc_getFace(rubiks, face, cubes);
-	printf("Finding cubes for face: %c\n", faceData[face].name);
+	log_debug("Finding cubes for face: %c\n", faceData[face].name);
 	for (int i=0; i<FACE_SIZE; i++) {
 
 		// iterate over each cube in face (cubes[0..FACE_SIZE])
 		// for each cube in face, iterate over its faces
 		int fn = cube_getShownFace(cubes[i], face);
-		printf("\tFound in face: %c\n", faceData[fn].name);
+		log_debug("\tFound in face: %c\n", faceData[fn].name);
 		if (fn != -1) {
 			colors[i] = faceData[fn].color;
 		} else {
