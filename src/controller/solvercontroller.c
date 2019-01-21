@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "controller/solvercontroller.h"
 #include "rubiks.h"
 #include "cube.h"
@@ -20,6 +22,10 @@ void solveWhiteCorners(Rubiks *rubiks);
 void solveMiddleLayer(Rubiks *rubiks);
 void solveDownFace(Rubiks *rubiks);
 void solveFinalLayer(Rubiks *rubiks);
+
+int shortestDirectionToFace(Rubiks *rubiks, int faceToRotate,
+	int startSideFace, int desiredSideFace
+);
 
 typedef struct{
 	const char *name;
@@ -125,9 +131,29 @@ void solveWhiteCross(Rubiks *rubiks) {
 		Cube *cube = rc_getCubeById(rubiks, id);
 		int correctPos = cube_checkPosition(cube);
 		int correctRot = cube_checkRotation(cube);
-		int correctSideFace = rc_checkCubeInFace(cube, whiteCrossFaces[i]); // TODO change for each cube
+		int correctSideFace = rc_checkCubeInFace(cube, whiteCrossFaces[i]);
 		int inUpFace = rc_checkCubeInFace(cube, UP_FACE);
 		int inDownFace = rc_checkCubeInFace(cube, DOWN_FACE);
+
+		int currentSideFace = -1;
+		// locate cube in a side face
+		for (int faceIndex=0; faceIndex<4; faceIndex++) {
+			if (rc_checkCubeInFace(cube, whiteCrossFaces[faceIndex])) {
+				currentSideFace = whiteCrossFaces[faceIndex];
+				break;
+			}
+		}
+
+		// other face that cube exists in, in addition to side face
+		int startFace = 0;
+		for ( ; startFace<NUM_FACES; startFace++) {
+			if (startFace == currentSideFace) {
+				continue;
+			}
+			if (rc_checkCubeInFace(cube, startFace)) {
+				break;
+			}
+		}
 
 		log_info("Cube %i correct position: %s, correct rotation: %s\n",
 			cube->id, correctPos ? "YES":"NO", correctRot ? "YES":"NO"
@@ -138,62 +164,37 @@ void solveWhiteCross(Rubiks *rubiks) {
 		if (correctPos && correctRot) {
 			continue;
 		} else if (!correctPos && correctSideFace) {
-			//for (int rotations=0; rotations<3; rotations++) {
-				rc_rotateFace(rubiks, whiteCrossFaces[i], CLOCKWISE);
-			//	correctPos = cube_checkPosition(cube);
-			//	if (correctPos) {
-			//		break;
-			//	}
-			//}
-		/*} else if (!correctPos && inUpFace) {
-			//for (int rotations=0; rotations<3; rotations++) {
-			// THIS IS WRONG!! this will undo other faces
-			// Should rotate it to bottom
-				rc_rotateFace(rubiks, UP_FACE, CLOCKWISE);
-			//	correctPos = cube_checkPosition(cube);
-			//	if (correctPos) {
-			//		break;
-			//	}
-			//} */
-		} else if (inDownFace && !correctSideFace) {
-			//for (int rotations=0; rotations<3; rotations++) {
-				rc_rotateFace(rubiks, DOWN_FACE, CLOCKWISE);
-			//	correctSideFace = rc_checkCubeInFace(cube, whiteCrossFaces[i]);
-			//	if (correctSideFace) {
-			//		break;
-			//	}
-			//}
-		} else if (!correctPos && !correctRot) {
-			log_info("Cube %i in incorrect position, incorrect rotation", cube->id);
-			//rotate the face it is in...
-			int currentFace = -1;
-			// locate cube in a side face
-			for (int faceIndex=0; faceIndex<4; faceIndex++) {
-				if (rc_checkCubeInFace(cube, whiteCrossFaces[faceIndex])) {
-					currentFace = whiteCrossFaces[faceIndex];
-					break;
-				}
+			// when in correct face, want to use adjacent face as starting location
+			if (startFace == whiteCrossFaces[i]) {
+				startFace = currentSideFace;
 			}
-			// TODO rotating a cube down could un-solve another cube
-			// need to rotate face back after rotating bottom away
-			// queue up moves?
+			int direction = shortestDirectionToFace(rubiks, whiteCrossFaces[i], startFace, UP_FACE);
+			rc_rotateFace(rubiks, whiteCrossFaces[i], direction);
+		} else if (inDownFace && !correctSideFace) {
+			int direction = shortestDirectionToFace(rubiks, DOWN_FACE, currentSideFace, whiteCrossFaces[i]);
+			rc_rotateFace(rubiks, DOWN_FACE, direction);
+		} else if (!correctPos && !correctRot) {
+			log_info("Cube %i in incorrect position, incorrect rotation\n", cube->id);
+			log_info("Start location: side: %i, startFace: %i\n", currentSideFace, startFace);
+			int direction = shortestDirectionToFace(rubiks, startFace, currentSideFace, DOWN_FACE);
 			int numRotations;
 			for (numRotations=0; numRotations<3; numRotations++) {
 				if (rc_checkCubeInFace(cube, DOWN_FACE)) {
 					break;
 				}
-				rc_rotateFace(rubiks, currentFace, CLOCKWISE);
+				rc_rotateFace(rubiks, currentSideFace, direction);
 			}
-			rc_rotateFace(rubiks, DOWN_FACE, CLOCKWISE);
+			int downFaceDirection = shortestDirectionToFace(rubiks, DOWN_FACE, currentSideFace, whiteCrossFaces[i]);
+			rc_rotateFace(rubiks, DOWN_FACE, downFaceDirection);
 			// put rotated face back where it started
-			for ( ; numRotations>=0; numRotations--) {
-				rc_rotateFace(rubiks, currentFace, CLOCKWISE);
+			for ( ; numRotations>0; numRotations--) {
+				rc_rotateFace(rubiks, currentSideFace, -1*direction);
 			}
 		} else if (correctPos && !correctRot) {
 			log_info("Cube %i in correct position but rotated wrong...\n", cube->id);
 			rc_rotateFace(rubiks, whiteCrossFaces[i], COUNTERCLOCKWISE);
 			rc_rotateFace(rubiks, UP_FACE, CLOCKWISE);
-			rc_rotateFace(rubiks, faceData[whiteCrossFaces[i]].faceToLeft, COUNTERCLOCKWISE);
+			rc_rotateFace(rubiks, faceData[whiteCrossFaces[i]].neighbors[LEFT], COUNTERCLOCKWISE);
 			rc_rotateFace(rubiks, UP_FACE, COUNTERCLOCKWISE);
 		}
 		return;
@@ -212,9 +213,20 @@ void solveDownFace(Rubiks *rubiks) {
 void solveFinalLayer(Rubiks *rubiks) {
 }
 
-int shortestDirectionToFace(Rubiks *rubiks, int faceToRotate, int startSideFace, int desiredSideFace) {
-	// TODO return CLOCKWISE or COUNTERCLOCKWISE
-	// depending on which direction gives a shorter path to the desiredSideFace
-	// ex, rotating fontFace to make leftFace cubes on downFace -- 1 CCW, or 3 CW -- return CCW
-	return CLOCKWISE;
+#define NUM_SIDES 4
+int shortestDirectionToFace(Rubiks *rubiks, int faceToRotate,
+	int startSideFace, int destinationSideFace
+) {
+	log_info("Looking for shortest direction, rotating face %c from start=%c to dest=%c\n",
+		faceData[faceToRotate].name, faceData[startSideFace].name, faceData[destinationSideFace].name
+	);
+	int startSideIndex = indexOf(faceData[faceToRotate].neighbors, 4, startSideFace);
+	int destinationSideIndex = indexOf(faceData[faceToRotate].neighbors, 4, destinationSideFace);
+	log_info("start: %i, dest: %i\n", startSideIndex, destinationSideIndex);
+
+	int dist = abs(destinationSideIndex - startSideIndex);
+	int direction = startSideIndex < destinationSideIndex ? CLOCKWISE : COUNTERCLOCKWISE;
+	direction = (dist < NUM_SIDES/2) ? direction : -direction;
+
+	return direction;
 }
