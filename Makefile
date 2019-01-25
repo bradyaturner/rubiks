@@ -32,6 +32,7 @@ $(APP): $(obj)
 
 # rule to generate a dep file by using the C preprocessor
 %.$(DEPEXT): %.$(SRCEXT)
+	@mkdir -p bin
 	@$(CC) $(CFLAGS) $< -MM -MT $(@:.$(DEPEXT)=.$(OBJEXT)) > $@
 
 .PHONY: clean

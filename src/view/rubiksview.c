@@ -1,3 +1,10 @@
+#ifdef __APPLE__
+#define GL_SILENCE_DEPRECATION
+#include <OpenGl/gl.h>
+#else
+#include <GL/gl.h>
+#endif
+
 #include "view/rubiksview.h"
 #include "view/cubeview.h"
 #include "view/constants.h"
