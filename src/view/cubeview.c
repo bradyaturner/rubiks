@@ -1,6 +1,11 @@
 #include "view/cubeview.h"
 #include "view/constants.h"
+#ifdef __APPLE__
+#define GL_SILENCE_DEPRECATION
+#include <OpenGl/gl.h>
+#else
 #include <GL/gl.h>
+#endif
 
 static GLfloat vertices[] =
 {
