@@ -210,14 +210,10 @@ void solveWhiteCross(Rubiks *rubiks) {
 			// TODO if in correct face already, rotate to top
 			log_info("Cube %i is in incorrect position\n", id);
 			// Rotate to bottom face first
-			if (!rc_checkCubeInFace(cube, DOWN_FACE)) {
-				rotateFaceToTarget(rubiks, currentSideFace, currentOtherFace, DOWN_FACE);
-				currentOtherFace = DOWN_FACE;
-			}
+			rotateFaceToTarget(rubiks, currentSideFace, currentOtherFace, DOWN_FACE);
+
 			// Once in DOWN_FACE, rotate DOWN_FACE to get on correct side face
-			if (!rc_checkCubeInFace(cube, whiteCrossFaces[i])) {
-				rotateFaceToTarget(rubiks, currentOtherFace, currentSideFace, whiteCrossFaces[i]);
-			}
+			rotateFaceToTarget(rubiks, DOWN_FACE, currentSideFace, whiteCrossFaces[i]);
 
 			// Revert rotations
 			rotateFaceToTarget(rubiks, currentSideFace, DOWN_FACE, currentOtherFace);
