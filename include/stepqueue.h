@@ -15,6 +15,7 @@ typedef struct stepQueue {
 } StepQueue;
 
 void initQueue(StepQueue *queue);
-void enqueue(StepQueue *head, Step item);
-Step dequeue(StepQueue *head);
+void enqueue(StepQueue *queue, Step item);
+void enqueueMultiple(StepQueue *queue, Step item, int count);
+Step dequeue(StepQueue *queue);
 #endif

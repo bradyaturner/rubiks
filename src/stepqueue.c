@@ -23,6 +23,12 @@ void enqueue(StepQueue *queue, Step item) {
 	queue->size++;
 }
 
+void enqueueMultiple(StepQueue *queue, Step item, int count) {
+	for (int i=0; i<count; i++) {
+		enqueue(queue, item);
+	}
+}
+
 Step dequeue(StepQueue *queue) {
 	Step *tmp = queue->first;
 	// TODO what to do if empty?

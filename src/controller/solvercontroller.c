@@ -193,16 +193,12 @@ void solveWhiteCross(Rubiks *rubiks) {
 			enqueue(&queue, s);
 
 			s = (Step){DOWN_FACE, COUNTERCLOCKWISE};
-			enqueue(&queue, s);
-			// Cube will be in DOWN_FACE
+			enqueue(&queue, s); // Cube will be in DOWN_FACE
 
 			s = (Step){faceData[currentSideFace].neighbors[RIGHT], CLOCKWISE};
-			enqueue(&queue, s);
-			// Cube will be in (correct face), DOWN_FACE
+			enqueue(&queue, s); // Cube will be in (correct face), DOWN_FACE
 
-			s = (Step){currentSideFace, COUNTERCLOCKWISE};
-			enqueue(&queue, s);
-			enqueue(&queue, s);
+			// Rotation of side face to top position handled by "in correct face" case
 		} else if (rc_checkCubeInFace(cube, whiteCrossFaces[i])) {
 			log_info("Cube %i is in correct face, but not correct position\n", id);
 			// Once in correct face, rotate face 2x to get into UP_FACE
@@ -213,9 +209,7 @@ void solveWhiteCross(Rubiks *rubiks) {
 				faceData[startFace].name, faceData[UP_FACE].name
 			);
 			Step s = {whiteCrossFaces[i], rotdir.direction};
-			for (int count=0; count<rotdir.num; count++) {
-				enqueue(&queue, s);
-			}
+			enqueueMultiple(&queue, s, rotdir.num);
 		} else if (!correctPos) {
 			// TODO if in correct face already, rotate to top
 			log_info("Cube %i is in incorrect position\n", id);
@@ -230,9 +224,7 @@ void solveWhiteCross(Rubiks *rubiks) {
 					faceData[currentOtherFace].name, faceData[DOWN_FACE].name
 				);
 				Step s = {currentSideFace, rotdir.direction};
-				for (int count=0; count<rotdir.num; count++) {
-					enqueue(&queue, s);
-				}
+				enqueueMultiple(&queue, s, rotdir.num);
 				currentOtherFace = DOWN_FACE;
 				faceRotated = currentSideFace;
 				timesRotated = rotdir.num;
@@ -246,19 +238,15 @@ void solveWhiteCross(Rubiks *rubiks) {
 				log_info("Rotating DOWN_FACE %i times in %i direction to get from %c to %c\n",
 					rotdir.num, rotdir.direction, faceData[currentSideFace].name, faceData[whiteCrossFaces[i]].name
 				);
-				for (int count=0; count<rotdir.num; count++) {
-					Step s = {currentOtherFace, rotdir.direction};
-					enqueue(&queue, s);
-				}
+				Step s = {currentOtherFace, rotdir.direction};
+				enqueueMultiple(&queue, s, rotdir.num);
 				currentSideFace = whiteCrossFaces[i];
 			}
 
 			// Revert rotations
 			if (timesRotated) {
 				Step s = {faceRotated, directionRotated*-1};
-				for (int count=0; count<timesRotated; count++) {
-					enqueue(&queue, s);
-				}
+				enqueueMultiple(&queue, s, timesRotated);
 			}
 			// Rotation to UP_FACE handled by (in correct face) case
 		}
