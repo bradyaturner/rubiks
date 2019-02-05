@@ -1,6 +1,7 @@
 #include <stdlib.h>
 
 #include "controller/solvercontroller.h"
+#include "controller/rubikscontroller.h"
 #include "rubiks.h"
 #include "cube.h"
 #include "logger.h"
@@ -118,22 +119,23 @@ int checkFinalLayer(Rubiks* rubiks) {
 }
 
 void solver_solve(Rubiks *rubiks) {
-	if (queue.size > 0) { // and no currently rotating face
-		printf("\n\n\n\n");
-		log_info("%s\n", "Next step on queue:");
-		Step step = dequeue(&queue);
-		rc_rotateFace(rubiks, step.face, step.direction);
-		// TODO beginRotation
-		printf("\n\n\n\n\n");
+	if (rc_isRotating()) {
 		return;
 	}
-	// else if currently rotating face, return
-	printf("\n\n\n\n\n");
-	for (int currentStep=0; currentStep<NUM_STEPS; currentStep++) {
-		if (!checkStep(rubiks, currentStep)) {
-			(*steps[currentStep].solveFunction)(rubiks);
-			return;
+
+	if (queue.size == 0) {
+		for (int currentStep=0; currentStep<NUM_STEPS; currentStep++) {
+			if (!checkStep(rubiks, currentStep)) {
+				(*steps[currentStep].solveFunction)(rubiks);
+				break;
+			}
 		}
+	}
+
+	if ((queue.size > 0 && !rc_isRotating())) {
+		log_info("%s\n", "Next step on queue:");
+		Step step = dequeue(&queue);
+		rc_beginFaceRotation(rubiks, step.face, step.direction, 0);
 	}
 }
 
@@ -184,12 +186,15 @@ void solveWhiteCross(Rubiks *rubiks) {
 			enqueue(&queue, s);
 			s = (Step){faceData[currentSideFace].neighbors[RIGHT], COUNTERCLOCKWISE};
 			enqueue(&queue, s);
+
 			s = (Step){DOWN_FACE, COUNTERCLOCKWISE};
 			enqueue(&queue, s);
 			// Cube will be in DOWN_FACE
+
 			s = (Step){faceData[currentSideFace].neighbors[RIGHT], CLOCKWISE};
 			enqueue(&queue, s);
 			// Cube will be in (correct face), DOWN_FACE
+
 			s = (Step){currentSideFace, COUNTERCLOCKWISE};
 			enqueue(&queue, s);
 			enqueue(&queue, s);
