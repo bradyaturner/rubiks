@@ -34,6 +34,8 @@ RotAndDir shortestDistanceToFace(Rubiks *rubiks, int faceToRotate,
 	int startSideFace, int desiredSideFace
 );
 
+RotAndDir rotateFaceToTarget(Rubiks *rubiks, int faceToRotate, int fromFace, int toFace);
+
 typedef struct{
 	const char *name;
 	int (*checkFunction)(Rubiks *rubiks);
@@ -203,51 +205,22 @@ void solveWhiteCross(Rubiks *rubiks) {
 			log_info("Cube %i is in correct face, but not correct position\n", id);
 			// Once in correct face, rotate face 2x to get into UP_FACE
 			int startFace = (currentSideFace == whiteCrossFaces[i]) ? currentOtherFace : currentSideFace;
-			RotAndDir rotdir = shortestDistanceToFace(rubiks, whiteCrossFaces[i], startFace, UP_FACE);
-			log_info("Rotating %c %i times in %i direction to get from %c to %c\n",
-				faceData[whiteCrossFaces[i]].name, rotdir.num, rotdir.direction,
-				faceData[startFace].name, faceData[UP_FACE].name
-			);
-			Step s = {whiteCrossFaces[i], rotdir.direction};
-			enqueueMultiple(&queue, s, rotdir.num);
+			rotateFaceToTarget(rubiks, whiteCrossFaces[i], startFace, UP_FACE);
 		} else if (!correctPos) {
 			// TODO if in correct face already, rotate to top
 			log_info("Cube %i is in incorrect position\n", id);
 			// Rotate to bottom face first
-			int faceRotated = -1;
-			int timesRotated = 0;
-			int directionRotated = 0;
 			if (!rc_checkCubeInFace(cube, DOWN_FACE)) {
-				RotAndDir rotdir = shortestDistanceToFace(rubiks, currentSideFace, currentOtherFace, DOWN_FACE);
-				log_info("Rotating %c %i times in %i direction to get from %c to %c\n",
-					faceData[currentSideFace].name, rotdir.num, rotdir.direction,
-					faceData[currentOtherFace].name, faceData[DOWN_FACE].name
-				);
-				Step s = {currentSideFace, rotdir.direction};
-				enqueueMultiple(&queue, s, rotdir.num);
+				rotateFaceToTarget(rubiks, currentSideFace, currentOtherFace, DOWN_FACE);
 				currentOtherFace = DOWN_FACE;
-				faceRotated = currentSideFace;
-				timesRotated = rotdir.num;
-				directionRotated = rotdir.direction;
 			}
 			// Once in DOWN_FACE, rotate DOWN_FACE to get on correct side face
 			if (!rc_checkCubeInFace(cube, whiteCrossFaces[i])) {
-				RotAndDir rotdir = shortestDistanceToFace(
-					rubiks, currentOtherFace, currentSideFace, whiteCrossFaces[i]
-				);
-				log_info("Rotating DOWN_FACE %i times in %i direction to get from %c to %c\n",
-					rotdir.num, rotdir.direction, faceData[currentSideFace].name, faceData[whiteCrossFaces[i]].name
-				);
-				Step s = {currentOtherFace, rotdir.direction};
-				enqueueMultiple(&queue, s, rotdir.num);
-				currentSideFace = whiteCrossFaces[i];
+				rotateFaceToTarget(rubiks, currentOtherFace, currentSideFace, whiteCrossFaces[i]);
 			}
 
 			// Revert rotations
-			if (timesRotated) {
-				Step s = {faceRotated, directionRotated*-1};
-				enqueueMultiple(&queue, s, timesRotated);
-			}
+			rotateFaceToTarget(rubiks, currentSideFace, DOWN_FACE, currentOtherFace);
 			// Rotation to UP_FACE handled by (in correct face) case
 		}
 		break; // if reached here then didn't hit 'continue' above
@@ -384,4 +357,15 @@ RotAndDir shortestDistanceToFace(Rubiks *rubiks, int faceToRotate,
 	dist = (dist < NUM_SIDES/2) ? dist : NUM_SIDES-dist;
 	RotAndDir ret = {dist, direction};
 	return ret;
+}
+
+RotAndDir rotateFaceToTarget(Rubiks *rubiks, int faceToRotate, int fromFace, int toFace) {
+	RotAndDir rotdir = shortestDistanceToFace(rubiks, faceToRotate, fromFace, toFace);
+	log_info("Rotating %c %i times in %i direction to get from %c to %c\n",
+		faceData[faceToRotate].name, rotdir.num, rotdir.direction,
+		faceData[fromFace].name, faceData[toFace].name
+	);
+	Step s = {faceToRotate, rotdir.direction};
+	enqueueMultiple(&queue, s, rotdir.num);
+	return rotdir;
 }
