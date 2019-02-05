@@ -307,6 +307,8 @@ int glapp_run(){
 
 	printHelpText();
 
+	solver_init();
+
 	while (!glfwWindowShouldClose(window)) {
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
