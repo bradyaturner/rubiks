@@ -25,7 +25,12 @@ void solveMiddleLayer(Rubiks *rubiks);
 void solveDownFace(Rubiks *rubiks);
 void solveFinalLayer(Rubiks *rubiks);
 
-int shortestDistanceToFace(Rubiks *rubiks, int faceToRotate,
+typedef struct{
+	int num;
+	int direction;
+} RotAndDir;
+
+RotAndDir shortestDistanceToFace(Rubiks *rubiks, int faceToRotate,
 	int startSideFace, int desiredSideFace
 );
 
@@ -202,15 +207,13 @@ void solveWhiteCross(Rubiks *rubiks) {
 			log_info("Cube %i is in correct face, but not correct position\n", id);
 			// Once in correct face, rotate face 2x to get into UP_FACE
 			int startFace = (currentSideFace == whiteCrossFaces[i]) ? currentOtherFace : currentSideFace;
-			int distance = shortestDistanceToFace(rubiks, whiteCrossFaces[i], startFace, UP_FACE);
-			int direction = distance/abs(distance);
-			distance = abs(distance);
+			RotAndDir rotdir = shortestDistanceToFace(rubiks, whiteCrossFaces[i], startFace, UP_FACE);
 			log_info("Rotating %c %i times in %i direction to get from %c to %c\n",
-				faceData[whiteCrossFaces[i]].name, distance, direction,
+				faceData[whiteCrossFaces[i]].name, rotdir.num, rotdir.direction,
 				faceData[startFace].name, faceData[UP_FACE].name
 			);
-			for (int count=0; count<distance; count++) {
-				Step s = {whiteCrossFaces[i], direction};
+			Step s = {whiteCrossFaces[i], rotdir.direction};
+			for (int count=0; count<rotdir.num; count++) {
 				enqueue(&queue, s);
 			}
 		} else if (!correctPos) {
@@ -221,41 +224,39 @@ void solveWhiteCross(Rubiks *rubiks) {
 			int timesRotated = 0;
 			int directionRotated = 0;
 			if (!rc_checkCubeInFace(cube, DOWN_FACE)) {
-				int distance = shortestDistanceToFace(rubiks, currentSideFace, currentOtherFace, DOWN_FACE);
-				int direction = distance/abs(distance);
-				distance = abs(distance);
+				RotAndDir rotdir = shortestDistanceToFace(rubiks, currentSideFace, currentOtherFace, DOWN_FACE);
 				log_info("Rotating %c %i times in %i direction to get from %c to %c\n",
-					faceData[currentSideFace].name, distance, direction,
+					faceData[currentSideFace].name, rotdir.num, rotdir.direction,
 					faceData[currentOtherFace].name, faceData[DOWN_FACE].name
 				);
-				for (int count=0; count<distance; count++) {
-					Step s = {currentSideFace, direction};
+				Step s = {currentSideFace, rotdir.direction};
+				for (int count=0; count<rotdir.num; count++) {
 					enqueue(&queue, s);
 				}
 				currentOtherFace = DOWN_FACE;
 				faceRotated = currentSideFace;
-				timesRotated = direction;
-				directionRotated = direction;
-				// TODO revert these rotations after rotating bottom face
+				timesRotated = rotdir.num;
+				directionRotated = rotdir.direction;
 			}
 			// Once in DOWN_FACE, rotate DOWN_FACE to get on correct side face
 			if (!rc_checkCubeInFace(cube, whiteCrossFaces[i])) {
-				int distance = shortestDistanceToFace(rubiks, currentOtherFace, currentSideFace, whiteCrossFaces[i]);
-				int direction = distance/abs(distance);
-				distance = abs(distance);
-				log_info("Rotating DOWN_FACE %i times in %i direction to get from %c to %c\n",
-					distance, direction, faceData[currentSideFace].name, faceData[whiteCrossFaces[i]].name
+				RotAndDir rotdir = shortestDistanceToFace(
+					rubiks, currentOtherFace, currentSideFace, whiteCrossFaces[i]
 				);
-				for (int count=0; count<distance; count++) {
-					Step s = {currentOtherFace, direction};
+				log_info("Rotating DOWN_FACE %i times in %i direction to get from %c to %c\n",
+					rotdir.num, rotdir.direction, faceData[currentSideFace].name, faceData[whiteCrossFaces[i]].name
+				);
+				for (int count=0; count<rotdir.num; count++) {
+					Step s = {currentOtherFace, rotdir.direction};
 					enqueue(&queue, s);
 				}
 				currentSideFace = whiteCrossFaces[i];
 			}
 
+			// Revert rotations
 			if (timesRotated) {
+				Step s = {faceRotated, directionRotated*-1};
 				for (int count=0; count<timesRotated; count++) {
-					Step s = {faceRotated, directionRotated*-1};
 					enqueue(&queue, s);
 				}
 			}
@@ -379,10 +380,10 @@ void solveFinalLayer(Rubiks *rubiks) {
 }
 
 #define NUM_SIDES 4
-int shortestDistanceToFace(Rubiks *rubiks, int faceToRotate,
+RotAndDir shortestDistanceToFace(Rubiks *rubiks, int faceToRotate,
 	int startSideFace, int destinationSideFace
 ) {
-	log_info("Looking for shortest direction, rotating face %c from start=%c to dest=%c\n",
+	log_info("Looking for shortest distance, rotating face %c from start=%c to dest=%c\n",
 		faceData[faceToRotate].name, faceData[startSideFace].name, faceData[destinationSideFace].name
 	);
 	int startSideIndex = indexOf(faceData[faceToRotate].neighbors, 4, startSideFace);
@@ -393,6 +394,6 @@ int shortestDistanceToFace(Rubiks *rubiks, int faceToRotate,
 	int direction = startSideIndex < destinationSideIndex ? CLOCKWISE : COUNTERCLOCKWISE;
 	direction = (dist < NUM_SIDES/2) ? direction : -direction;
 	dist = (dist < NUM_SIDES/2) ? dist : NUM_SIDES-dist;
-
-	return direction*dist;
+	RotAndDir ret = {dist, direction};
+	return ret;
 }

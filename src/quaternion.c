@@ -2,6 +2,7 @@
 #include "vector.h"
 #include <float.h>
 #include <math.h>
+#define M_PI 3.14159265358979323846264338327
 
 #define QUAT_IDENTITY_X 0
 #define QUAT_IDENTITY_Y 0
