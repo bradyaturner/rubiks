@@ -148,165 +148,168 @@ void solver_solve(Rubiks *rubiks) {
 	}
 }
 
+typedef struct {
+	int correctPos;
+	int correctRot;
+	int stepCubeIndex;
+	Cube *cube;
+} CubeSolutionState;
+
+CubeSolutionState getNextUnsolved(Rubiks *rubiks, int stepCubes[], int size) {
+
+	int correctPos, correctRot;
+	int stepCubeIndex = 0;
+	Cube *cube = NULL;
+
+	for ( ; stepCubeIndex<size; stepCubeIndex++) {
+		int id = stepCubes[stepCubeIndex];
+		cube = rc_getCubeById(rubiks, id);
+		correctPos = cube_checkPosition(cube);
+		correctRot = cube_checkRotation(cube);
+		if (!(correctPos && correctRot)) {
+			log_info("Cube %i is unsolved.\n", id);
+			break;
+		} else {
+			log_info("Cube %i is solved.\n", id);
+		}
+	}
+	CubeSolutionState state = {correctPos, correctRot, stepCubeIndex, cube};
+	return state;
+}
+
 int whiteCrossFaces[4] = {BACK_FACE, LEFT_FACE, RIGHT_FACE, FRONT_FACE};
 void solveWhiteCross(Rubiks *rubiks) {
 	log_info("%s\n", "Inside solveWhiteCross()");
 
-	for (int i=0; i<4; i++) {
-		int id = whiteCrossCubeIds[i];
-		Cube *cube = rc_getCubeById(rubiks, id);
-		int correctPos = cube_checkPosition(cube);
-		int correctRot = cube_checkRotation(cube);
-		if (correctPos && correctRot) {
-			log_info("Cube %i is solved.\n", id);
-			continue;
-		}
+	CubeSolutionState state = getNextUnsolved(rubiks, whiteCrossCubeIds, 4);
 
-		int currentSideFace = -1;
-		for (int faceIndex=0; faceIndex<4; faceIndex++) {
-			if (rc_checkCubeInFace(cube, whiteCrossFaces[faceIndex])) {
-				currentSideFace = whiteCrossFaces[faceIndex];
-				break;
-			}
+	int currentSideFace = -1;
+	for (int faceIndex=0; faceIndex<4; faceIndex++) {
+		if (rc_checkCubeInFace(state.cube, whiteCrossFaces[faceIndex])) {
+			currentSideFace = whiteCrossFaces[faceIndex];
+			break;
 		}
-		if (currentSideFace == -1) {
-			log_fatal("Did not find side face for cube: %i\n", id);
-			exit(1);
-		}
-
-		int currentOtherFace = -1;
-		for (int faceIndex=0; faceIndex<NUM_FACES; faceIndex++) {
-			if (faceIndex == currentSideFace) {
-				continue;
-			}
-			if (rc_checkCubeInFace(cube, faceIndex)) {
-				currentOtherFace = faceIndex;
-				break;
-			}
-		}
-		if (currentOtherFace == -1) {
-			log_fatal("Did not find second face for cube: %i, current side face: %i\n", id, currentSideFace);
-			exit(1);
-		}
-
-		if (correctPos && !correctRot) {
-			log_info("Cube %i is in correct position, but incorrect rotation\n", id);
-			enqueueStep(currentSideFace, CLOCKWISE);
-			enqueueStep(faceData[currentSideFace].neighbors[RIGHT], COUNTERCLOCKWISE);
-			enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
-			enqueueStep(faceData[currentSideFace].neighbors[RIGHT], CLOCKWISE);
-
-			// Rotation of side face to top position handled by "in correct face" case
-		} else if (rc_checkCubeInFace(cube, whiteCrossFaces[i])) {
-			log_info("Cube %i is in correct face, but not correct position\n", id);
-			// Once in correct face, rotate face 2x to get into UP_FACE
-			int startFace = (currentSideFace == whiteCrossFaces[i]) ? currentOtherFace : currentSideFace;
-			rotateFaceToTarget(rubiks, whiteCrossFaces[i], startFace, UP_FACE);
-		} else if (!correctPos) {
-			// TODO if in correct face already, rotate to top
-			log_info("Cube %i is in incorrect position\n", id);
-			// Rotate to bottom face first
-			rotateFaceToTarget(rubiks, currentSideFace, currentOtherFace, DOWN_FACE);
-
-			// Once in DOWN_FACE, rotate DOWN_FACE to get on correct side face
-			rotateFaceToTarget(rubiks, DOWN_FACE, currentSideFace, whiteCrossFaces[i]);
-
-			// Revert rotations
-			rotateFaceToTarget(rubiks, currentSideFace, DOWN_FACE, currentOtherFace);
-			// Rotation to UP_FACE handled by (in correct face) case
-		}
-		break; // if reached here then didn't hit 'continue' above
+	}
+	if (currentSideFace == -1) {
+		log_fatal("Did not find side face for cube: %i\n", state.cube->id);
+		exit(1);
 	}
 
+	int currentOtherFace = -1;
+	for (int faceIndex=0; faceIndex<NUM_FACES; faceIndex++) {
+		if (faceIndex == currentSideFace) {
+			continue;
+		}
+		if (rc_checkCubeInFace(state.cube, faceIndex)) {
+			currentOtherFace = faceIndex;
+			break;
+		}
+	}
+	if (currentOtherFace == -1) {
+		log_fatal("Did not find second face for cube: %i, current side face: %i\n", state.cube->id, currentSideFace);
+		exit(1);
+	}
+
+	if (state.correctPos && !state.correctRot) {
+		log_info("Cube %i is in correct position, but incorrect rotation\n", state.cube->id);
+		enqueueStep(currentSideFace, CLOCKWISE);
+		enqueueStep(faceData[currentSideFace].neighbors[RIGHT], COUNTERCLOCKWISE);
+		enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
+		enqueueStep(faceData[currentSideFace].neighbors[RIGHT], CLOCKWISE);
+		// Rotation of side face to top position handled by "in correct face" case
+	} else if (rc_checkCubeInFace(state.cube, whiteCrossFaces[state.stepCubeIndex])) {
+		log_info("Cube %i is in correct face, but not correct position\n", state.cube->id);
+		int startFace = (currentSideFace == whiteCrossFaces[state.stepCubeIndex]) ? currentOtherFace : currentSideFace;
+		rotateFaceToTarget(rubiks, whiteCrossFaces[state.stepCubeIndex], startFace, UP_FACE);
+	} else if (!state.correctPos) {
+		// TODO if in correct face already, rotate to top
+		log_info("Cube %i is in incorrect position\n", state.cube->id);
+		rotateFaceToTarget(rubiks, currentSideFace, currentOtherFace, DOWN_FACE);
+		rotateFaceToTarget(rubiks, DOWN_FACE, currentSideFace, whiteCrossFaces[state.stepCubeIndex]);
+		rotateFaceToTarget(rubiks, currentSideFace, DOWN_FACE, currentOtherFace);
+		// Rotation to UP_FACE handled by (in correct face) case
+	}
 }
 
 void solveWhiteCorners(Rubiks *rubiks) {
 	log_info("%s\n", "Inside solveWhiteCorners()");
 
-	for (int i=0; i<4; i++) {
-		int id = whiteCornersCubeIds[i];
-		Cube *cube = rc_getCubeById(rubiks, id);
-		int correctPos = cube_checkPosition(cube);
-		int correctRot = cube_checkRotation(cube);
-		//int correctSideFace = rc_checkCubeInFace(cube, whiteCrossFaces[i]);
-		int inUpFace = rc_checkCubeInFace(cube, UP_FACE);
-		int inDownFace = rc_checkCubeInFace(cube, DOWN_FACE);
+	CubeSolutionState state = getNextUnsolved(rubiks, whiteCornersCubeIds, 4);
 
-		log_info("Getting sides for cube %i, pos=%i\n", cube->id, cube->position);
-		// TODO change these to find left face, right face
-		int sideFace1 = 0;
-		for ( ; sideFace1<NUM_FACES; sideFace1++) {
-			if (sideFace1 == UP_FACE || sideFace1 == DOWN_FACE) {
-				continue;
-			}
-			if (rc_checkCubeInFace(cube, sideFace1)) {
-				break;
-			}
-		}
-		log_info("%s\n", "CHECK HERE");
+	int inUpFace = rc_checkCubeInFace(state.cube, UP_FACE);
+	int inDownFace = rc_checkCubeInFace(state.cube, DOWN_FACE);
 
-		int sideFace2 = 0;
-		for ( ; sideFace2<NUM_FACES; sideFace2++) {
-			if (sideFace2 == UP_FACE || sideFace2 == DOWN_FACE || sideFace2 == sideFace1) {
-				continue;
-			}
-			if (rc_checkCubeInFace(cube, sideFace2)) {
-				break;
-			}
-		}
-		log_info("%s\n", "CHECK HERE");
-		log_info("Cube side faces: %c and %c\n", faceData[sideFace1].name, faceData[sideFace2].name);
-
-		if (correctPos && correctRot) {
+	log_info("Getting sides for cube %i, pos=%i\n", state.cube->id, state.cube->position);
+	// TODO change these to find left face, right face
+	int sideFace1 = 0;
+	for ( ; sideFace1<NUM_FACES; sideFace1++) {
+		if (sideFace1 == UP_FACE || sideFace1 == DOWN_FACE) {
 			continue;
-		} else if (!correctPos && inUpFace) {
-			log_info("Cube %i is in UP_FACE, but not correct position\n", cube->id);
-			// TODO this can be smarter -- decide which face to rotate based on orientation of cube
-			int whiteFace = cube_getShownFace(cube, UP_FACE);
-			log_info("Cube white face is visible in face: %c\n", faceData[whiteFace].name);
-			int faceToRotate = sideFace1;
-			int direction = COUNTERCLOCKWISE;
-
-			if (faceData[sideFace1].neighbors[LEFT] == sideFace2) {
-				log_info("%s\n", "SF1 to the right");
-				if (whiteFace == sideFace2) {
-					faceToRotate = sideFace2;
-					direction = CLOCKWISE;
-				}
-			} else {
-				log_info("%s\n", "SF2 to the right");
-				if (whiteFace != sideFace1) {
-					faceToRotate = sideFace2;
-				} else {
-					direction = CLOCKWISE;
-				}
-			}
-			enqueueStep(faceToRotate, direction);
-			enqueueStep(DOWN_FACE, direction);
-			enqueueStep(faceToRotate, -direction);
-			enqueueStep(DOWN_FACE, -direction);
-		} else if ((correctPos && !correctRot) || (inDownFace && cube->position == cube->initialPosition + 18)) {
-			// in position below, follow algorithm
-			log_info("Cube %i located at position below target, pos=%i, target=%i\n",
-				cube->id, cube->position, cube->initialPosition
-			);
-			int faceToRotate = sideFace1;
-			int direction = COUNTERCLOCKWISE;
-
-			if (faceData[sideFace1].neighbors[RIGHT] == sideFace2) {
-				log_info("%s\n", "SF2 to the right");
-				faceToRotate = sideFace2;
-			}
-			enqueueStep(faceToRotate, direction);
-			enqueueStep(DOWN_FACE, direction);
-			enqueueStep(faceToRotate, -direction);
-			enqueueStep(DOWN_FACE, -direction);
-		} else if (inDownFace) {
-			log_info("Cube %i located in bottom face, but needs rotated.\n", cube->id);
-			// TODO determine shortest # rotations and direction
-			enqueueStep(DOWN_FACE, CLOCKWISE);
 		}
-		return; // should only reach here if a cube isn't solved -- don't modify further cubes until this one is done
+		if (rc_checkCubeInFace(state.cube, sideFace1)) {
+			break;
+		}
+	}
+	log_info("%s\n", "CHECK HERE");
+
+	int sideFace2 = 0;
+	for ( ; sideFace2<NUM_FACES; sideFace2++) {
+		if (sideFace2 == UP_FACE || sideFace2 == DOWN_FACE || sideFace2 == sideFace1) {
+			continue;
+		}
+		if (rc_checkCubeInFace(state.cube, sideFace2)) {
+			break;
+		}
+	}
+	log_info("%s\n", "CHECK HERE");
+	log_info("Cube side faces: %c and %c\n", faceData[sideFace1].name, faceData[sideFace2].name);
+
+	if (!state.correctPos && inUpFace) {
+		log_info("Cube %i is in UP_FACE, but not correct position\n", state.cube->id);
+		// TODO this can be smarter -- decide which face to rotate based on orientation of cube
+		int whiteFace = cube_getShownFace(state.cube, UP_FACE);
+		log_info("Cube white face is visible in face: %c\n", faceData[whiteFace].name);
+		int faceToRotate = sideFace1;
+		int direction = COUNTERCLOCKWISE;
+
+		if (faceData[sideFace1].neighbors[LEFT] == sideFace2) {
+			log_info("%s\n", "SF1 to the right");
+			if (whiteFace == sideFace2) {
+				faceToRotate = sideFace2;
+				direction = CLOCKWISE;
+			}
+		} else {
+			log_info("%s\n", "SF2 to the right");
+			if (whiteFace != sideFace1) {
+				faceToRotate = sideFace2;
+			} else {
+				direction = CLOCKWISE;
+			}
+		}
+		enqueueStep(faceToRotate, direction);
+		enqueueStep(DOWN_FACE, direction);
+		enqueueStep(faceToRotate, -direction);
+		enqueueStep(DOWN_FACE, -direction);
+	} else if ((state.correctPos && !state.correctRot) || (inDownFace && state.cube->position == state.cube->initialPosition + 18)) {
+		// in position below, follow algorithm
+		log_info("Cube %i located at position below target, pos=%i, target=%i\n",
+			state.cube->id, state.cube->position, state.cube->initialPosition
+		);
+		int faceToRotate = sideFace1;
+		int direction = COUNTERCLOCKWISE;
+
+		if (faceData[sideFace1].neighbors[RIGHT] == sideFace2) {
+			log_info("%s\n", "SF2 to the right");
+			faceToRotate = sideFace2;
+		}
+		enqueueStep(faceToRotate, direction);
+		enqueueStep(DOWN_FACE, direction);
+		enqueueStep(faceToRotate, -direction);
+		enqueueStep(DOWN_FACE, -direction);
+	} else if (inDownFace) {
+		log_info("Cube %i located in bottom face, but needs rotated.\n", state.cube->id);
+		// TODO determine shortest # rotations and direction
+		enqueueStep(DOWN_FACE, CLOCKWISE);
 	}
 }
 
