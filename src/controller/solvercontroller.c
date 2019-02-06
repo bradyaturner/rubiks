@@ -51,6 +51,8 @@ StepDefinition steps[NUM_STEPS] = {
 };
 
 StepQueue queue;
+void enqueueStep(int faceToRotate, int direction);
+void enqueueMultipleStep(int faceToRotate, int direction, int num);
 
 void solver_init() {
 	initQueue(&queue);
@@ -189,16 +191,10 @@ void solveWhiteCross(Rubiks *rubiks) {
 
 		if (correctPos && !correctRot) {
 			log_info("Cube %i is in correct position, but incorrect rotation\n", id);
-			Step s = {currentSideFace, CLOCKWISE};
-			enqueue(&queue, s);
-			s = (Step){faceData[currentSideFace].neighbors[RIGHT], COUNTERCLOCKWISE};
-			enqueue(&queue, s);
-
-			s = (Step){DOWN_FACE, COUNTERCLOCKWISE};
-			enqueue(&queue, s); // Cube will be in DOWN_FACE
-
-			s = (Step){faceData[currentSideFace].neighbors[RIGHT], CLOCKWISE};
-			enqueue(&queue, s); // Cube will be in (correct face), DOWN_FACE
+			enqueueStep(currentSideFace, CLOCKWISE);
+			enqueueStep(faceData[currentSideFace].neighbors[RIGHT], COUNTERCLOCKWISE);
+			enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
+			enqueueStep(faceData[currentSideFace].neighbors[RIGHT], CLOCKWISE);
 
 			// Rotation of side face to top position handled by "in correct face" case
 		} else if (rc_checkCubeInFace(cube, whiteCrossFaces[i])) {
@@ -226,8 +222,6 @@ void solveWhiteCross(Rubiks *rubiks) {
 
 void solveWhiteCorners(Rubiks *rubiks) {
 	log_info("%s\n", "Inside solveWhiteCorners()");
-//	log_info("%s\n", "EXITING");
-//	exit(1);
 
 	for (int i=0; i<4; i++) {
 		int id = whiteCornersCubeIds[i];
@@ -239,6 +233,7 @@ void solveWhiteCorners(Rubiks *rubiks) {
 		int inDownFace = rc_checkCubeInFace(cube, DOWN_FACE);
 
 		log_info("Getting sides for cube %i, pos=%i\n", cube->id, cube->position);
+		// TODO change these to find left face, right face
 		int sideFace1 = 0;
 		for ( ; sideFace1<NUM_FACES; sideFace1++) {
 			if (sideFace1 == UP_FACE || sideFace1 == DOWN_FACE) {
@@ -286,10 +281,10 @@ void solveWhiteCorners(Rubiks *rubiks) {
 					direction = CLOCKWISE;
 				}
 			}
-			rc_rotateFace(rubiks, faceToRotate, direction);
-			rc_rotateFace(rubiks, DOWN_FACE, direction);
-			rc_rotateFace(rubiks, faceToRotate, -direction);
-			rc_rotateFace(rubiks, DOWN_FACE, -direction);
+			enqueueStep(faceToRotate, direction);
+			enqueueStep(DOWN_FACE, direction);
+			enqueueStep(faceToRotate, -direction);
+			enqueueStep(DOWN_FACE, -direction);
 		} else if ((correctPos && !correctRot) || (inDownFace && cube->position == cube->initialPosition + 18)) {
 			// in position below, follow algorithm
 			log_info("Cube %i located at position below target, pos=%i, target=%i\n",
@@ -302,26 +297,14 @@ void solveWhiteCorners(Rubiks *rubiks) {
 				log_info("%s\n", "SF2 to the right");
 				faceToRotate = sideFace2;
 			}
-			for (int numIterations=0; numIterations<4; numIterations++) {
-				rc_rotateFace(rubiks, faceToRotate, direction);
-				rc_rotateFace(rubiks, DOWN_FACE, direction);
-				rc_rotateFace(rubiks, faceToRotate, -direction);
-				rc_rotateFace(rubiks, DOWN_FACE, -direction);
-				correctPos = cube_checkPosition(cube);
-				correctRot = cube_checkRotation(cube);
-				if (correctPos && correctRot) {
-					break;
-				}
-			}
+			enqueueStep(faceToRotate, direction);
+			enqueueStep(DOWN_FACE, direction);
+			enqueueStep(faceToRotate, -direction);
+			enqueueStep(DOWN_FACE, -direction);
 		} else if (inDownFace) {
 			log_info("Cube %i located in bottom face, but needs rotated.\n", cube->id);
-			for (int i=0; i<3; i++) {
-				// TODO determine shortest # rotations and direction
-				rc_rotateFace(rubiks, DOWN_FACE, CLOCKWISE);
-				if (cube->position == cube->initialPosition+18) {
-					break;
-				}
-			}
+			// TODO determine shortest # rotations and direction
+			enqueueStep(DOWN_FACE, CLOCKWISE);
 		}
 		return; // should only reach here if a cube isn't solved -- don't modify further cubes until this one is done
 	}
@@ -361,7 +344,17 @@ RotAndDir rotateFaceToTarget(Rubiks *rubiks, int faceToRotate, int fromFace, int
 		faceData[faceToRotate].name, rotdir.num, rotdir.direction,
 		faceData[fromFace].name, faceData[toFace].name
 	);
-	Step s = {faceToRotate, rotdir.direction};
-	enqueueMultiple(&queue, s, rotdir.num);
+	enqueueMultipleStep(faceToRotate, rotdir.direction, rotdir.num);
 	return rotdir;
+}
+
+void enqueueStep(int faceToRotate, int direction) {
+	Step s = {faceToRotate, direction};
+	enqueue(&queue, s);
+}
+
+void enqueueMultipleStep(int faceToRotate, int direction, int num) {
+	for (int i=0; i<num; i++) {
+		enqueueStep(faceToRotate, direction);
+	}
 }
