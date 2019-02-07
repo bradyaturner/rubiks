@@ -97,6 +97,7 @@ void rc_initialize(Rubiks *rubiks) {
 	for (int i = 0; i<NUM_CUBES; i++) {
 		cube_initialize(&rubiks->cubes[i], i, i);
 	}
+	rubiks->cubeInProgress = -1;
 }
 
 void rc_reset(Rubiks *rubiks) {

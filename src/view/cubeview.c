@@ -19,18 +19,20 @@ static GLfloat vertices[] =
 
 static void cube_drawNormalized(const Cube cube, int useColor);
 
+static const float scale = 0.95;
+static const float lineWidth = 5.0; // this should be proportional to cube size
 void cube_draw(Cube cube, Vec3f coords, RGB3f lineColor, double cubeWidth) {
 	glPushMatrix();
 
 	glTranslatef(coords.x, coords.y, coords.z);
-	glScalef(cubeWidth, cubeWidth, cubeWidth);
+	glScalef(cubeWidth*scale, cubeWidth*scale, cubeWidth*scale);
 	glMultMatrixf(quat_toMatrix(&cube.quat));
 
 	// Draw outline
 	glEnable(GL_POLYGON_OFFSET_LINE);
 	glPolygonOffset(0,-1);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	glLineWidth((GLfloat)8); // this should be proportional to cube size
+	glLineWidth((GLfloat)lineWidth);
 	glColor3f(lineColor.red, lineColor.green, lineColor.blue); // line color
 	cube_drawNormalized(cube, 0);
 	glDisable(GL_POLYGON_OFFSET_LINE);

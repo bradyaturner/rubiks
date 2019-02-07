@@ -174,6 +174,7 @@ CubeSolutionState getNextUnsolved(Rubiks *rubiks, int stepCubes[], int size) {
 		}
 	}
 	CubeSolutionState state = {correctPos, correctRot, stepCubeIndex, cube};
+	rubiks->cubeInProgress = cube->id;
 	return state;
 }
 

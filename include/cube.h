@@ -33,12 +33,12 @@ typedef struct {
 } CubeFaceData;
 
 static const CubeFaceData faceData[NUM_FACES] = {
-	{ 'L', 'R', {1.0, 0.0, 0.0}, {90, 0, 0}, {-1, 0, 0}, {BACK_FACE, UP_FACE, FRONT_FACE, DOWN_FACE} },
-	{ 'R', 'O', {1.0, 0.65, 0.0}, {-90, 0, 0}, {1, 0, 0}, {FRONT_FACE, UP_FACE, BACK_FACE, DOWN_FACE} },
-	{ 'D', 'Y', {1.0, 1.0, 0.0}, {0, 90, 0}, {0, -1, 0}, {LEFT_FACE, FRONT_FACE, RIGHT_FACE, BACK_FACE} },
+	{ 'L', 'R', {1.0, 0.30, 0.30}, {90, 0, 0}, {-1, 0, 0}, {BACK_FACE, UP_FACE, FRONT_FACE, DOWN_FACE} },
+	{ 'R', 'O', {1.0, 0.4, 0.2}, {-90, 0, 0}, {1, 0, 0}, {FRONT_FACE, UP_FACE, BACK_FACE, DOWN_FACE} },
+	{ 'D', 'Y', {1.0, 1.0, 0.4}, {0, 90, 0}, {0, -1, 0}, {LEFT_FACE, FRONT_FACE, RIGHT_FACE, BACK_FACE} },
 	{ 'U', 'W', {1.0, 1.0, 1.0}, {0, -90, 0}, {0, 1, 0}, {LEFT_FACE, BACK_FACE, RIGHT_FACE, FRONT_FACE} },
-	{ 'F', 'B', {0.0, 0.0, 1.0}, {0, 0, 90}, {0, 0, -1}, {LEFT_FACE, UP_FACE, RIGHT_FACE, DOWN_FACE} },
-	{ 'B', 'G', {0.0, 1.0, 0.0}, {0, 0, -90}, {0, 0, 1}, {RIGHT_FACE, UP_FACE, LEFT_FACE, DOWN_FACE} },
+	{ 'F', 'B', {0.2, 0.6, 1.0}, {0, 0, 90}, {0, 0, -1}, {LEFT_FACE, UP_FACE, RIGHT_FACE, DOWN_FACE} },
+	{ 'B', 'G', {0.36, 0.83, 0.36}, {0, 0, -90}, {0, 0, 1}, {RIGHT_FACE, UP_FACE, LEFT_FACE, DOWN_FACE} },
 };
 
 typedef struct {
