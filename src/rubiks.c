@@ -26,7 +26,7 @@ void rc_rotateFace(Rubiks *rubiks, int face, int direction) {
 		log_fatal("Attempted to rotate invalid face #%i\n", face);
 		exit(1);
 	}
-	log_info("rc_rotateFace(%c): [%i, %i, %i, %i, %i, %i, %i, %i, %i] -> {%i, %i, %i} direction: %sclockwise\n",
+	log_debug("rc_rotateFace(%c): [%i, %i, %i, %i, %i, %i, %i, %i, %i] -> {%i, %i, %i} direction: %sclockwise\n",
 		faceData[face].name, faces[face][0], faces[face][1], faces[face][2], faces[face][3], faces[face][4], faces[face][5],
 		faces[face][6], faces[face][7], faces[face][8], faceData[face].rotation.x, faceData[face].rotation.y,
 		faceData[face].rotation.z, direction==CLOCKWISE ? "":"counter"

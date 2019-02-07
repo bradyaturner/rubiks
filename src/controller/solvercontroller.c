@@ -76,7 +76,7 @@ int checkCurrentState(Rubiks *rubiks) {
 int checkStep(Rubiks *rubiks, int stepNum) {
 	log_debug("Checking step: %s\n", steps[stepNum].name);
 	int correct = (*steps[stepNum].checkFunction)(rubiks);
-	log_info("Step %s is %ssolved\n", steps[stepNum].name, (correct ? "" : "NOT "));
+	log_debug("Step %s is %ssolved\n", steps[stepNum].name, (correct ? "" : "NOT "));
 	return correct;
 }
 
@@ -142,8 +142,8 @@ void solver_solve(Rubiks *rubiks) {
 	}
 
 	if ((queue.size > 0 && !rc_isRotating())) {
-		log_info("%s\n", "Next step on queue:");
 		Step step = dequeue(&queue);
+		log_info("Next step on queue: %c%s\n", faceData[step.face].name, (step.direction<0?"'":""));
 		rc_beginFaceRotation(rubiks, step.face, step.direction, 0);
 	}
 }
@@ -170,7 +170,7 @@ CubeSolutionState getNextUnsolved(Rubiks *rubiks, int stepCubes[], int size) {
 			log_info("Cube %i is unsolved.\n", id);
 			break;
 		} else {
-			log_info("Cube %i is solved.\n", id);
+			log_debug("Cube %i is solved.\n", id);
 		}
 	}
 	CubeSolutionState state = {correctPos, correctRot, stepCubeIndex, cube};
@@ -186,7 +186,6 @@ int getFaceForCube(Cube *cube, int excludeList[], int excludeListLen) {
 	int currentFace = -1;
 	for (int faceNum=0; faceNum<NUM_FACES; faceNum++) {
 		if (indexOf(excludeList, excludeListLen, faceNum) >=0) {
-			log_info("Inside exclude list: %i\n", faceNum);
 			continue;
 		}
 		if (rc_checkCubeInFace(cube, faceNum)) {
@@ -222,7 +221,6 @@ typedef struct {
 } CornerPieceFaces;
 
 CornerPieceFaces getCornerPieceFaces(Cube *cube) {
-	log_info("Getting sides for cube %i, pos=%i\n", cube->id, cube->position);
 	int excludes[] = {UP_FACE, DOWN_FACE, -1};
 	int primary = getFaceForCube(cube, excludes, 2);
 
@@ -322,12 +320,12 @@ void solveFinalLayer(Rubiks *rubiks) {
 RotAndDir shortestDistanceToFace(Rubiks *rubiks, int faceToRotate,
 	int startSideFace, int destinationSideFace
 ) {
-	log_info("Looking for shortest distance, rotating face %c from start=%c to dest=%c\n",
+	log_debug("Looking for shortest distance, rotating face %c from start=%c to dest=%c\n",
 		faceData[faceToRotate].name, faceData[startSideFace].name, faceData[destinationSideFace].name
 	);
 	int startSideIndex = indexOf(faceData[faceToRotate].neighbors, 4, startSideFace);
 	int destinationSideIndex = indexOf(faceData[faceToRotate].neighbors, 4, destinationSideFace);
-	log_info("start: %i, dest: %i\n", startSideIndex, destinationSideIndex);
+	log_debug("start: %i, dest: %i\n", startSideIndex, destinationSideIndex);
 
 	int dist = abs(destinationSideIndex - startSideIndex);
 	int direction = startSideIndex < destinationSideIndex ? CLOCKWISE : COUNTERCLOCKWISE;
@@ -339,8 +337,8 @@ RotAndDir shortestDistanceToFace(Rubiks *rubiks, int faceToRotate,
 
 RotAndDir rotateFaceToTarget(Rubiks *rubiks, int faceToRotate, int fromFace, int toFace) {
 	RotAndDir rotdir = shortestDistanceToFace(rubiks, faceToRotate, fromFace, toFace);
-	log_info("Rotating %c %i times in %i direction to get from %c to %c\n",
-		faceData[faceToRotate].name, rotdir.num, rotdir.direction,
+	log_info("Rotating %i%c%s to get from %c to %c\n",
+		rotdir.num, faceData[faceToRotate].name, rotdir.direction<0?"'":"",
 		faceData[fromFace].name, faceData[toFace].name
 	);
 	enqueueMultipleStep(faceToRotate, rotdir.direction, rotdir.num);

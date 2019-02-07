@@ -67,7 +67,7 @@ void rc_beginFaceRotation(Rubiks *rubiks, int face, int direction, int instant) 
 		log_error("Invalid face to rotate: %i\n", face);
 	}
 
-	printf("%c%s\n", faceData[face].name, direction==1?"":"`");
+	log_debug("%c%s\n", faceData[face].name, direction==1?"":"`");
 
 	if (!rc_isRotating()) {
 		if (instant) {

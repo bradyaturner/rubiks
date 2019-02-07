@@ -18,8 +18,8 @@
 		__LINE__, __func__, __VA_ARGS__); } while (0)
 
 #define log_info(fmt, ...) \
-	do { if (LOG_LEVEL >= LOG_INFO) fprintf(stderr, "[INFO] %s:%d:%s(): " fmt, __FILE__, \
-		__LINE__, __func__, __VA_ARGS__); } while (0)
+	do { if (LOG_LEVEL >= LOG_INFO) fprintf(stderr, "[INFO] %s(): " fmt, \
+		__func__, __VA_ARGS__); } while (0)
 
 #define log_warn(fmt, ...) \
 	do { if (LOG_LEVEL >= LOG_WARN) fprintf(stderr, "[WARN] %s:%d:%s(): " fmt, __FILE__, \
