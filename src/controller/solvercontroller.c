@@ -30,6 +30,17 @@ typedef struct{
 	int direction;
 } RotAndDir;
 
+typedef struct {
+	int primary;
+	int secondary;
+} EdgePieceFaces;
+
+typedef struct {
+	int primary;
+	int secondary;
+	int horizontal;
+} CornerPieceFaces;
+
 RotAndDir shortestDistanceToFace(Rubiks *rubiks, int faceToRotate,
 	int startSideFace, int desiredSideFace
 );
@@ -105,6 +116,13 @@ int checkWhiteCorners(Rubiks *rubiks) {
 }
 
 static int middleLayerCubeIds[4] = {9, 11, 15, 17};
+static EdgePieceFaces middleLayerFaces[4] = {
+	{BACK_FACE, LEFT_FACE},
+	{RIGHT_FACE, BACK_FACE},
+	{LEFT_FACE, FRONT_FACE},
+	{FRONT_FACE, RIGHT_FACE}
+};
+
 int checkMiddleLayer(Rubiks* rubiks) {
 	return checkCubesPosAndRot(rubiks, middleLayerCubeIds, 4);
 }
@@ -177,11 +195,6 @@ CubeSolutionState getNextUnsolved(Rubiks *rubiks, int stepCubes[], int size) {
 	return state;
 }
 
-typedef struct {
-	int primary;
-	int secondary;
-} EdgePieceFaces;
-
 int getFaceForCube(Cube *cube, int excludeList[], int excludeListLen) {
 	int currentFace = -1;
 	for (int faceNum=0; faceNum<NUM_FACES; faceNum++) {
@@ -213,12 +226,6 @@ EdgePieceFaces getEdgePieceFaces(Cube *cube) {
 	EdgePieceFaces r = {primaryFace, secondaryFace};
 	return r;
 }
-
-typedef struct {
-	int primary;
-	int secondary;
-	int horizontal;
-} CornerPieceFaces;
 
 CornerPieceFaces getCornerPieceFaces(Cube *cube) {
 	int excludes[] = {UP_FACE, DOWN_FACE, -1};
@@ -308,6 +315,28 @@ void solveWhiteCorners(Rubiks *rubiks) {
 }
 
 void solveMiddleLayer(Rubiks *rubiks) {
+	log_info("%s\n", "Inside solveMiddleLayer()");
+
+	CubeSolutionState state = getNextUnsolved(rubiks, middleLayerCubeIds, 4);
+	log_info("Attempting to solve edge piece %i for middle layer\n", state.cube->id);
+
+	EdgePieceFaces faces = getEdgePieceFaces(state.cube);
+	EdgePieceFaces target = middleLayerFaces[state.stepCubeIndex];
+
+	log_info("Cube %i is in %c and %c\n", state.cube->id,
+		faceData[faces.primary].name, faceData[faces.secondary].name
+	);
+
+	log_info("Cube %i target is %c and %c\n", state.cube->id,
+		faceData[target.primary].name, faceData[target.secondary].name
+	);
+
+	// TODO get target face(primary, secondary) (left,right)
+
+	// Is cube in bottom,side
+	if (faces.secondary == DOWN_FACE) {
+	} else { // or in side,side
+	}
 }
 
 void solveDownFace(Rubiks *rubiks) {
