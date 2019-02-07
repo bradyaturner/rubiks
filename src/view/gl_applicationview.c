@@ -39,7 +39,7 @@ void drawAxisLines();
 // Debug functions
 void resetDebugInfo();
 
-Vec2d rotate = {0, 0};
+Vec2d rotate = {-30, 30};
 
 GLFWwindow *window;
 
