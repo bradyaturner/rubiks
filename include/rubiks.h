@@ -12,6 +12,7 @@
 
 typedef struct {
 	Cube cubes[NUM_CUBES];
+	int cubeInProgress;
 } Rubiks;
 
 // Data management
