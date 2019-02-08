@@ -203,6 +203,7 @@ CubeSolutionState getNextUnsolvedInFace(Rubiks *rubiks, int stepCubes[], int siz
 	int correctPos, correctRot;
 	int stepCubeIndex = 0;
 	Cube *cube = NULL;
+	int found = 0;
 
 	for ( ; stepCubeIndex<size; stepCubeIndex++) {
 		int id = stepCubes[stepCubeIndex];
@@ -213,6 +214,7 @@ CubeSolutionState getNextUnsolvedInFace(Rubiks *rubiks, int stepCubes[], int siz
 			log_info("Cube %i is unsolved.\n", id);
 			EdgePieceFaces faces = getEdgePieceFaces(cube);
 			if (faces.secondary == face) {
+				found = 1;
 				break;
 			} else {
 				log_info("Cube %i is unsolved, but not in face:%c\n", cube->id, faceData[face].name);
@@ -220,6 +222,10 @@ CubeSolutionState getNextUnsolvedInFace(Rubiks *rubiks, int stepCubes[], int siz
 		} else {
 			log_debug("Cube %i is solved.\n", id);
 		}
+	}
+	if (!found) {
+		cube = NULL;
+		stepCubeIndex = -1;
 	}
 	CubeSolutionState state = {correctPos, correctRot, stepCubeIndex, cube};
 	rubiks->cubeInProgress = cube->id;
@@ -249,12 +255,18 @@ EdgePieceFaces getEdgePieceFaces(Cube *cube) {
 	// left face should be the leftmost face, or the only side face when other is UP/DOWN
 
 	int excludes[] = {UP_FACE, DOWN_FACE};
-	int primaryFace = getFaceForCube(cube, excludes, 2);
+	int primary = getFaceForCube(cube, excludes, 2);
 
-	excludes[0] = primaryFace;
-	int secondaryFace = getFaceForCube(cube, excludes, 1);
+	excludes[0] = primary;
+	int secondary = getFaceForCube(cube, excludes, 1);
 
-	EdgePieceFaces r = {primaryFace, secondaryFace};
+	EdgePieceFaces r = {primary, secondary};
+
+	// sort left to right
+	if ((secondary != DOWN_FACE) && (secondary != UP_FACE) && (faceData[secondary].neighbors[RIGHT] == primary)) {
+		r.primary = secondary;
+		r.secondary = primary;
+	}
 	return r;
 }
 
@@ -348,7 +360,10 @@ void solveWhiteCorners(Rubiks *rubiks) {
 void solveMiddleLayer(Rubiks *rubiks) {
 	log_info("%s\n", "Inside solveMiddleLayer()");
 
-	CubeSolutionState state = getNextUnsolved(rubiks, middleLayerCubeIds, 4);
+	CubeSolutionState state = getNextUnsolvedInFace(rubiks, middleLayerCubeIds, 4, DOWN_FACE);
+	if (state.cube == NULL) {
+		state = getNextUnsolved(rubiks, middleLayerCubeIds, 4);
+	}
 	log_info("Attempting to solve edge piece %i for middle layer\n", state.cube->id);
 
 	EdgePieceFaces faces = getEdgePieceFaces(state.cube);
@@ -363,13 +378,15 @@ void solveMiddleLayer(Rubiks *rubiks) {
 		faceData[target.primary].name, faceData[target.secondary].name
 	);
 
-	// TODO get target face(primary, secondary) (left,right)
-
 	// Is cube in bottom,side
-	if (faces.secondary == DOWN_FACE && faces.primary != target.primary) {
+	//if (faces.secondary == DOWN_FACE && faces.primary != target.primary) {
+	if (faces.secondary == DOWN_FACE && cube_getShownFace(state.cube, faces.primary) != target.primary) {
+		log_info("A Cube %i secondary face is DOWN_FACE\n", state.cube->id);
 		rotateFaceToTarget(rubiks, DOWN_FACE, faces.primary, target.primary);
-	} else if ((faces.secondary == DOWN_FACE) || (state.correctPos && !state.correctRot) || !state.correctPos) {
-		if (cube_getShownFace(state.cube, DOWN_FACE) == target.secondary ) {
+	} else if (faces.secondary == DOWN_FACE) {
+		log_info("B Cube %i secondary face is DOWN_FACE\n", state.cube->id);
+		if (cube_getShownFace(state.cube, DOWN_FACE) == faceData[target.primary].neighbors[LEFT] ) {
+			log_info("%s\n", "HERE 1\n");
 			log_info("%s\n", "cube needs rotated to right");
 			enqueueStep(DOWN_FACE, CLOCKWISE);
 			enqueueStep(faceData[faces.primary].neighbors[LEFT], CLOCKWISE);
@@ -380,7 +397,8 @@ void solveMiddleLayer(Rubiks *rubiks) {
 			enqueueStep(DOWN_FACE, CLOCKWISE);
 			enqueueStep(faces.primary, CLOCKWISE);
 
-		} else {
+		} else if (cube_getShownFace(state.cube, DOWN_FACE) == faceData[target.primary].neighbors[RIGHT] ) {
+			log_info("%s\n", "HERE 1\n");
 			log_info("%s\n", "Cube needs rotated to left");
 			enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
 			enqueueStep(faceData[faces.primary].neighbors[RIGHT], COUNTERCLOCKWISE);
@@ -390,6 +408,12 @@ void solveMiddleLayer(Rubiks *rubiks) {
 			enqueueStep(faces.primary, CLOCKWISE);
 			enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
 			enqueueStep(faces.primary, COUNTERCLOCKWISE);
+		} else {
+			log_info("%s\n", "Move not found");
+			int face = cube_getShownFace(state.cube, DOWN_FACE);
+			log_info("Face shown in DOWN_FACE: %c\n", faceData[face].color);
+			log_info("Target face left neighbor: %c\n", faceData[faceData[target.primary].neighbors[LEFT]].color);
+			log_info("Target face right neighbor: %c\n", faceData[faceData[target.primary].neighbors[RIGHT]].color);
 		}
 	} else { // or in side,side
 	}
