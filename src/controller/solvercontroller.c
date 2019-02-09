@@ -225,12 +225,15 @@ CubeSolutionState getNextUnsolvedInFace(Rubiks *rubiks, int stepCubes[], int siz
 			log_debug("Cube %i is solved.", id);
 		}
 	}
+
+	CubeSolutionState state;
 	if (!found) {
-		cube = NULL;
-		stepCubeIndex = -1;
+		state = (CubeSolutionState){0, 0, -1, NULL};
+	} else {
+		rubiks->cubeInProgress = cube->id;
+		state = (CubeSolutionState){correctPos, correctRot, stepCubeIndex, cube};
 	}
-	CubeSolutionState state = {correctPos, correctRot, stepCubeIndex, cube};
-	rubiks->cubeInProgress = cube->id;
+
 	return state;
 }
 
@@ -364,12 +367,12 @@ void solveMiddleLayer(Rubiks *rubiks) {
 
 	CubeSolutionState state = getNextUnsolvedInFace(rubiks, middleLayerCubeIds, 4, DOWN_FACE);
 	if (state.cube == NULL) {
+		log_warn("%s", "Cube is NULL, need to find a different one");
 		state = getNextUnsolved(rubiks, middleLayerCubeIds, 4);
 	}
 	log_info("Attempting to solve edge piece %i for middle layer", state.cube->id);
 
 	EdgePieceFaces faces = getEdgePieceFaces(state.cube);
-	log_info("STATE.STEPCUBEINDEX = %i", state.stepCubeIndex);
 	EdgePieceFaces target = middleLayerFaces[state.stepCubeIndex];
 
 	log_info("Cube %i is in %c/%c and %c/%c", state.cube->id,
@@ -429,6 +432,20 @@ void solveMiddleLayer(Rubiks *rubiks) {
 		}
 	} else {
 		log_info("Cube %i is in MIDDLE_LAYER", state.cube->id);
+		if (faces.secondary == faceData[target.primary].neighbors[RIGHT]) {
+			int rightFace = faceData[faces.primary].neighbors[RIGHT];
+			enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
+			enqueueStep(rightFace, COUNTERCLOCKWISE);
+			enqueueStep(DOWN_FACE, CLOCKWISE);
+			enqueueStep(rightFace, CLOCKWISE);
+			enqueueStep(DOWN_FACE, CLOCKWISE);
+			enqueueStep(faces.primary, CLOCKWISE);
+			enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
+			enqueueStep(faces.primary, COUNTERCLOCKWISE);
+		} else {
+			log_error("%s", "UNEXPECTED STATE 2");
+			exit(1);
+		}
 	}
 }
 
