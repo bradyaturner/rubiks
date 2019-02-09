@@ -51,7 +51,7 @@ double rotationSpeed = ROTATION_SPEED_DEFAULT;
 
 void rc_toggleAnimations() {
 	animationsOn = !animationsOn;
-	log_info("Animations %s\n", animationsOn ? "ON" : "OFF");
+	log_info("Animations %s", animationsOn ? "ON" : "OFF");
 }
 
 void display(){
@@ -109,7 +109,7 @@ void drawAxisLines() {
 void resetDebugInfo() {
 	for (int i=0; i<NUM_CUBES; i++) {
 		Cube* cube = &rubiksCube.cubes[i];
-		log_info("Cube #%i at position: %i, quaternion: {%f, %f, %f, %f}\n",
+		log_info("Cube #%i at position: %i, quaternion: {%f, %f, %f, %f}",
 			i, cube->position, cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);
 	}
 	for (int i=0; i<NUM_FACES; i++) {
@@ -129,7 +129,7 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		return;
 	}
 
-	log_debug("Key pressed: %i\n", key);
+	log_debug("Key pressed: %i", key);
 	switch (key)
 	{
 		case GLFW_KEY_ESCAPE:
@@ -295,7 +295,7 @@ int glapp_run(){
 
 	window = glfwCreateWindow(800, 800, "Rubik's Cube", NULL, NULL);
 	if (!window) {
-		log_fatal("%s\n","Problem creating window!");
+		log_fatal("%s","Problem creating window!");
 		return 1;
 	}
 	glfwMakeContextCurrent(window);
