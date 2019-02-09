@@ -370,52 +370,63 @@ void solveMiddleLayer(Rubiks *rubiks) {
 	log_info("STATE.STEPCUBEINDEX = %i", state.stepCubeIndex);
 	EdgePieceFaces target = middleLayerFaces[state.stepCubeIndex];
 
-	log_info("Cube %i is in %c and %c", state.cube->id,
-		faceData[faces.primary].name, faceData[faces.secondary].name
+	log_info("Cube %i is in %c/%c and %c/%c", state.cube->id,
+		faceData[faces.primary].name, faceData[faces.primary].color,
+		faceData[faces.secondary].name, faceData[faces.secondary].color
 	);
 
-	log_info("Cube %i target is %c and %c", state.cube->id,
-		faceData[target.primary].name, faceData[target.secondary].name
+	log_info("Cube %i target is %c/%c and %c/%c", state.cube->id,
+		faceData[target.primary].name, faceData[target.primary].color,
+		faceData[target.secondary].name, faceData[target.secondary].color
 	);
 
-	// Is cube in bottom,side
-	//if (faces.secondary == DOWN_FACE && faces.primary != target.primary) {
-	if (faces.secondary == DOWN_FACE && cube_getShownFace(state.cube, faces.primary) != target.primary) {
-		log_info("A Cube %i secondary face is DOWN_FACE", state.cube->id);
-		rotateFaceToTarget(rubiks, DOWN_FACE, faces.primary, target.primary);
-	} else if (faces.secondary == DOWN_FACE) {
-		log_info("B Cube %i secondary face is DOWN_FACE", state.cube->id);
-		if (cube_getShownFace(state.cube, DOWN_FACE) == faceData[target.primary].neighbors[LEFT] ) {
-			log_info("%s", "HERE 1");
-			log_info("%s", "cube needs rotated to right");
-			enqueueStep(DOWN_FACE, CLOCKWISE);
-			enqueueStep(faceData[faces.primary].neighbors[LEFT], CLOCKWISE);
-			enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
-			enqueueStep(faceData[faces.primary].neighbors[LEFT], COUNTERCLOCKWISE);
-			enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
-			enqueueStep(faces.primary, COUNTERCLOCKWISE);
-			enqueueStep(DOWN_FACE, CLOCKWISE);
-			enqueueStep(faces.primary, CLOCKWISE);
-
-		} else if (cube_getShownFace(state.cube, DOWN_FACE) == faceData[target.primary].neighbors[RIGHT] ) {
-			log_info("%s", "HERE 1");
-			log_info("%s", "Cube needs rotated to left");
-			enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
-			enqueueStep(faceData[faces.primary].neighbors[RIGHT], COUNTERCLOCKWISE);
-			enqueueStep(DOWN_FACE, CLOCKWISE);
-			enqueueStep(faceData[faces.primary].neighbors[RIGHT], CLOCKWISE);
-			enqueueStep(DOWN_FACE, CLOCKWISE);
-			enqueueStep(faces.primary, CLOCKWISE);
-			enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
-			enqueueStep(faces.primary, COUNTERCLOCKWISE);
+	if (faces.secondary == DOWN_FACE) {
+		log_info("Cube %i is in DOWN_FACE", state.cube->id);
+		int shownFace = cube_getShownFace(state.cube, faces.primary);
+		int shownFaceSecondary = cube_getShownFace(state.cube, faces.secondary);
+		log_info("Cube is showing face %c/%c in primary face %c/%c",
+			faceData[shownFace].name, faceData[shownFace].color,
+			faceData[faces.primary].name, faceData[faces.primary].color
+		);
+		if (shownFace == faces.primary) {
+			log_info("Cube %i is in correct side face: %c -- colors should match: %c",
+				state.cube->id, faceData[faces.primary].name, faceData[faces.primary].color
+			);
+			if (shownFaceSecondary == target.primary) {
+				log_info("Secondary face matches target primary face: %c/%c, rotating to left position", 
+					faceData[shownFaceSecondary].name, faceData[shownFaceSecondary].color
+				);
+				int leftFace = faceData[faces.primary].neighbors[LEFT];
+				enqueueStep(DOWN_FACE, CLOCKWISE);
+				enqueueStep(leftFace, CLOCKWISE);
+				enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
+				enqueueStep(leftFace, COUNTERCLOCKWISE);
+				enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
+				enqueueStep(faces.primary, COUNTERCLOCKWISE);
+				enqueueStep(DOWN_FACE, CLOCKWISE);
+				enqueueStep(faces.primary, CLOCKWISE);
+			} else {
+				int rightFace = faceData[faces.primary].neighbors[RIGHT];
+				log_info("Secondary face matches target right face: %c/%c, rotating to right position", 
+					faceData[rightFace].name, faceData[rightFace].color
+				);
+				enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
+				enqueueStep(rightFace, COUNTERCLOCKWISE);
+				enqueueStep(DOWN_FACE, CLOCKWISE);
+				enqueueStep(rightFace, CLOCKWISE);
+				enqueueStep(DOWN_FACE, CLOCKWISE);
+				enqueueStep(faces.primary, CLOCKWISE);
+				enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
+				enqueueStep(faces.primary, COUNTERCLOCKWISE);
+			}
 		} else {
-			log_info("%s", "Move not found");
-			int face = cube_getShownFace(state.cube, DOWN_FACE);
-			log_info("Face shown in DOWN_FACE: %c", faceData[face].color);
-			log_info("Target face left neighbor: %c", faceData[faceData[target.primary].neighbors[LEFT]].color);
-			log_info("Target face right neighbor: %c", faceData[faceData[target.primary].neighbors[RIGHT]].color);
+			log_info("Cube %i is NOT in correct side face: %c -- must be rotated.",
+				state.cube->id, faceData[faces.primary].name
+			);
+			rotateFaceToTarget(rubiks, DOWN_FACE, faces.primary, shownFace);
 		}
-	} else { // or in side,side
+	} else {
+		log_info("Cube %i is in MIDDLE_LAYER", state.cube->id);
 	}
 }
 
