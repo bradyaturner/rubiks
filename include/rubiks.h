@@ -33,4 +33,7 @@ int rc_checkCubeInFace(Cube *cube, int face);
 int rc_serialize(Rubiks *rubiks, char* out);
 int rc_getFaceColors(Rubiks *rubiks, int face, char* colors);
 
+void rc_serializeState(Rubiks *rubiks);
+void rc_deserializeState(Rubiks *rubiks, char* state);
+
 #endif

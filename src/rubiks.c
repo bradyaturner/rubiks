@@ -140,6 +140,26 @@ int rc_serialize(Rubiks *rubiks, char* out) {
 	return 1;
 }
 
+void rc_serializeState(Rubiks *rubiks) {
+	for (int i=0; i<NUM_CUBES; i++) {
+		Cube *cube = &rubiks->cubes[i];
+		printf("%i:%f:%f:%f:%f;", cube->position, cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);
+	}
+	printf("\n");
+}
+
+void rc_deserializeState(Rubiks *rubiks, char* statestr) {
+	int posn;
+	for (int i=0; i<NUM_CUBES; i++) {
+		int pos;
+		float x, y, z, w;
+		sscanf(statestr, "%i:%f:%f:%f:%f;%n", &pos, &x, &y, &z, &w, &posn);
+		rubiks->cubes[i].position = pos;
+		rubiks->cubes[i].quat = (Quaternion) {x, y, z, w};
+		statestr += posn;
+	}
+}
+
 int rc_getFaceColors(Rubiks *rubiks, int face, char* colors) {
 	Cube* cubes[FACE_SIZE];
 	rc_getFace(rubiks, face, cubes);

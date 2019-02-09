@@ -153,6 +153,8 @@ void solver_solve(Rubiks *rubiks) {
 	}
 
 	if (queue.size == 0) {
+		log_info("%s", "Queue empty, generating next steps");
+		rc_serializeState(rubiks);
 		for (int currentStep=0; currentStep<NUM_STEPS; currentStep++) {
 			if (!checkStep(rubiks, currentStep)) {
 				(*steps[currentStep].solveFunction)(rubiks);
@@ -407,7 +409,7 @@ void solveMiddleLayer(Rubiks *rubiks) {
 				enqueueStep(faces.primary, CLOCKWISE);
 			} else {
 				int rightFace = faceData[faces.primary].neighbors[RIGHT];
-				log_info("Secondary face matches target right face: %c/%c, rotating to right position", 
+				log_info("Secondary face matches target right face: %c/%c, rotating to right position",
 					faceData[rightFace].name, faceData[rightFace].color
 				);
 				enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
