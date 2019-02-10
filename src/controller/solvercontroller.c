@@ -386,14 +386,12 @@ void solveMiddleLayer(Rubiks *rubiks) {
 	if (faces.secondary == DOWN_FACE) {
 		int shownFace = cube_getShownFace(state.cube, faces.primary);
 		int shownFaceSecondary = cube_getShownFace(state.cube, faces.secondary);
-		if (shownFace == faces.primary) {
-			if (shownFaceSecondary == target.primary) {
-				faceToRotate = faceData[faces.primary].neighbors[LEFT];
-				form = DownToLeft;
-			} else {
-				faceToRotate = faceData[faces.primary].neighbors[RIGHT];
-				form = DownToRight;
-			}
+		if ((shownFace == faces.primary) && (shownFaceSecondary == target.primary)) {
+			faceToRotate = faceData[faces.primary].neighbors[LEFT];
+			form = DownToLeft;
+		} else if (shownFace == faces.primary){
+			faceToRotate = faceData[faces.primary].neighbors[RIGHT];
+			form = DownToRight;
 		} else {
 			faceToRotate = shownFace;
 			form = IncorrectSide;
@@ -401,6 +399,9 @@ void solveMiddleLayer(Rubiks *rubiks) {
 	} else if (faces.secondary == faceData[target.primary].neighbors[RIGHT]) {
 		faceToRotate = faceData[faces.primary].neighbors[RIGHT];
 		form = Middle;
+	} else if (faces.secondary == target.primary){
+		faceToRotate = faceData[faces.primary].neighbors[RIGHT];
+		form = DownToRight; // rotate cube out of right pos
 	}
 
 	if (form == MLUnknown) {
