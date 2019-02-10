@@ -401,6 +401,9 @@ void solveMiddleLayer(Rubiks *rubiks) {
 	} else if (faces.secondary == target.primary){
 		faceToRotate = faceData[faces.primary].neighbors[RIGHT];
 		form = DownToRight; // rotate cube out of right pos
+	} else if (faces.primary == target.secondary) {
+		faceToRotate = faces.primary;
+		form = DownToRight;
 	}
 
 	if (form == MLUnknown) {
