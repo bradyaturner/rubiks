@@ -389,57 +389,27 @@ void solveMiddleLayer(Rubiks *rubiks) {
 	EdgePieceFaces faces = getEdgePieceFaces(state.cube);
 	EdgePieceFaces target = middleLayerFaces[state.stepCubeIndex];
 
-	log_info("Cube %i is in %c/%c and %c/%c", state.cube->id,
-		faceData[faces.primary].name, faceData[faces.primary].color,
-		faceData[faces.secondary].name, faceData[faces.secondary].color
-	);
-
-	log_info("Cube %i target is %c/%c and %c/%c", state.cube->id,
-		faceData[target.primary].name, faceData[target.primary].color,
-		faceData[target.secondary].name, faceData[target.secondary].color
-	);
-
 	MiddleLayerForm form = MLUnknown;
 	int faceToRotate;
 
 	if (faces.secondary == DOWN_FACE) {
-		log_info("Cube %i is in DOWN_FACE", state.cube->id);
 		int shownFace = cube_getShownFace(state.cube, faces.primary);
 		int shownFaceSecondary = cube_getShownFace(state.cube, faces.secondary);
-		log_info("Cube is showing face %c/%c in primary face %c/%c",
-			faceData[shownFace].name, faceData[shownFace].color,
-			faceData[faces.primary].name, faceData[faces.primary].color
-		);
 		if (shownFace == faces.primary) {
-			log_info("Cube %i is in correct side face: %c -- colors should match: %c",
-				state.cube->id, faceData[faces.primary].name, faceData[faces.primary].color
-			);
 			if (shownFaceSecondary == target.primary) {
-				log_info("Secondary face matches target primary face: %c/%c, rotating to left position", 
-					faceData[shownFaceSecondary].name, faceData[shownFaceSecondary].color
-				);
 				faceToRotate = faceData[faces.primary].neighbors[LEFT];
 				form = DownToLeft;
 			} else {
 				faceToRotate = faceData[faces.primary].neighbors[RIGHT];
-				log_info("Secondary face matches target right face: %c/%c, rotating to right position",
-					faceData[faceToRotate].name, faceData[faceToRotate].color
-				);
 				form = DownToRight;
 			}
 		} else {
-			log_info("Cube %i is NOT in correct side face: %c -- must be rotated.",
-				state.cube->id, faceData[faces.primary].name
-			);
 			faceToRotate = shownFace;
 			form = IncorrectSide;
 		}
-	} else {
-		log_info("Cube %i is in MIDDLE_LAYER", state.cube->id);
-		if (faces.secondary == faceData[target.primary].neighbors[RIGHT]) {
-			faceToRotate = faceData[faces.primary].neighbors[RIGHT];
-			form = Middle;
-		}
+	} else if (faces.secondary == faceData[target.primary].neighbors[RIGHT]) {
+		faceToRotate = faceData[faces.primary].neighbors[RIGHT];
+		form = Middle;
 	}
 
 	if (form == MLUnknown) {
