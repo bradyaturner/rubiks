@@ -335,25 +335,16 @@ void solveWhiteCorners(Rubiks *rubiks) {
 	log_info("%s", "Inside solveWhiteCorners()");
 
 	CubeSolutionState state = getNextUnsolved(rubiks, whiteCornersCubeIds, 4);
-
 	CornerPieceFaces faces = getCornerPieceFaces(state.cube);
-
-	log_info("Cube side faces: %c and %c", faceData[faces.primary].name, faceData[faces.secondary].name);
 
 	// TODO make these rotations smarter -- account for rotation
 	if (!state.correctPos && faces.horizontal == UP_FACE) {
-		log_info("Cube %i is in UP_FACE, but not correct position", state.cube->id);
 		repositionCornerPiece(faces.primary, CLOCKWISE);
 	} else if (state.correctPos && !state.correctRot) {
-		log_info("Cube %i is in correct position but incorrect rotation.", state.cube->id);
 		repositionCornerPiece(faces.primary, CLOCKWISE);
 	} else if (state.cube->position == state.cube->initialPosition + 18) {
-		log_info("Cube %i located at position below target, pos=%i, target=%i",
-			state.cube->id, state.cube->position, state.cube->initialPosition
-		);
 		repositionCornerPiece(faces.primary, CLOCKWISE);
 	} else if (faces.horizontal == DOWN_FACE) {
-		log_info("Cube %i located in bottom face, but needs rotated.", state.cube->id);
 		// TODO determine shortest # rotations and direction
 		enqueueStep(DOWN_FACE, CLOCKWISE);
 	}
