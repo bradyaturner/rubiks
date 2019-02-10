@@ -427,8 +427,38 @@ void yellowCrossRotationSequence(YCrossForm form) {
 	enqueueStep(BACK_FACE, COUNTERCLOCKWISE);
 }
 
-static int ycCubePositions[4] = {19, 23, 25, 21}; // in clockwise order
-//static int yellowCornersCubeIds[4] = {18, 20, 24, 26};
+void yellowCornersRotationSequence() {
+	enqueueStep(RIGHT_FACE, CLOCKWISE);
+	enqueueStep(DOWN_FACE, CLOCKWISE);
+	enqueueStep(RIGHT_FACE, COUNTERCLOCKWISE);
+	enqueueStep(DOWN_FACE, CLOCKWISE);
+	enqueueStep(RIGHT_FACE, CLOCKWISE);
+	enqueueStep(DOWN_FACE, CLOCKWISE);
+	enqueueStep(DOWN_FACE, CLOCKWISE);
+	enqueueStep(RIGHT_FACE, COUNTERCLOCKWISE);
+}
+
+typedef enum {OneCorner, TwoCorners, NoCornersLeftCube, NoCornersRightCube} YCornersForm;
+
+int getSolvedForDownFace(Rubiks *rubiks, int *positions, int *solvedList) {
+	int numSolved = 0;
+	for (int index=0; index<4; index++) {
+		Cube *cube = rc_getCubeAtPos(rubiks, positions[index]);
+		log_info("Cube %i at pos %i", cube->id, cube->position);
+		int face = cube_getShownFace(cube, DOWN_FACE);
+		log_info("Cube %i color shown in DOWN_FACE: %c", cube->id, faceData[face].color);
+		if (face == DOWN_FACE) {
+			numSolved++;
+			solvedList[index] = 1;
+		} else {
+			solvedList[index] = 0;
+		}
+	}
+	return numSolved;
+}
+
+static int ycrCubePositions[4] = {19, 23, 25, 21}; // in clockwise order
+static int ycnCubePositions[4] = {18, 20, 24, 26};
 void solveDownFace(Rubiks *rubiks) {
 	// TWO STEPS:
 	// 1) Solve yellow cross
@@ -437,18 +467,9 @@ void solveDownFace(Rubiks *rubiks) {
 
 	log_info("%s", "Inside solveDownFace");
 	// Solve yellow cross
-	int numSolved = 0;
 	int cubesSolved[4] = {0, 0, 0, 0};
-	for (int index=0; index<4; index++) {
-		Cube *cube = rc_getCubeAtPos(rubiks, ycCubePositions[index]);
-		log_info("Cube %i at pos %i", cube->id, cube->position);
-		int face = cube_getShownFace(cube, DOWN_FACE);
-		log_info("Cube %i color shown in DOWN_FACE: %c", cube->id, faceData[face].color);
-		if (face == DOWN_FACE) {
-			numSolved++;
-			cubesSolved[index] = 1;
-		}
-	}
+	int numSolved = getSolvedForDownFace(rubiks, ycrCubePositions, cubesSolved);
+
 	log_info("Number of yellow cross pieces in correct orientation: %i", numSolved);
 
 	YCrossForm form = Unknown;
@@ -459,11 +480,11 @@ void solveDownFace(Rubiks *rubiks) {
 		log_info("%s", "No cubes in cross are solved");
 		form = Center;
 	} else if (cubesSolved[0] && cubesSolved[2]) {
-		log_info("Straight line of cross cubes is solved: %i, %i", ycCubePositions[0], ycCubePositions[2]);
+		log_info("Straight line of cross cubes is solved: %i, %i", ycrCubePositions[0], ycrCubePositions[2]);
 		enqueueStep(DOWN_FACE, CLOCKWISE); // rotate to match pattern
 		form = Line;
 	} else if (cubesSolved[1] && cubesSolved[3]) {
-		log_info("Straight line of cross cubes is solved: %i, %i", ycCubePositions[1], ycCubePositions[3]);
+		log_info("Straight line of cross cubes is solved: %i, %i", ycrCubePositions[1], ycrCubePositions[3]);
 		form = Line;
 	} else if (numSolved == 2) {
 		int firstCube = 0;
@@ -476,9 +497,9 @@ void solveDownFace(Rubiks *rubiks) {
 		}
 		if (secondCube >= 0) {
 			log_info("Cube L shape formed with cubes at positions: %i, %i",
-				ycCubePositions[firstCube], ycCubePositions[secondCube]
+				ycrCubePositions[firstCube], ycrCubePositions[secondCube]
 			);
-			Cube *cube = rc_getCubeAtPos(rubiks, ycCubePositions[secondCube]);
+			Cube *cube = rc_getCubeAtPos(rubiks, ycrCubePositions[secondCube]);
 			EdgePieceFaces faces = getEdgePieceFaces(cube);
 			rotateFaceToTarget(DOWN_FACE, faces.primary, LEFT_FACE); // rotate to match pattern
 			form = LShape;
@@ -488,10 +509,63 @@ void solveDownFace(Rubiks *rubiks) {
 		log_fatal("%s", "Unable to determine yellow cross form!");
 		exit(1);
 	} else if (form != YCrSolved) {
+		int unsolvedIndex = indexOf(cubesSolved, 4, 0);
+		Cube *unsolvedCube = rc_getCubeAtPos(rubiks, ycrCubePositions[unsolvedIndex]);
+		rubiks->cubeInProgress = unsolvedCube->id;
 		yellowCrossRotationSequence(form);
+		return; // TODO refactor cross & corners
 	}
 
 	// TODO solve corners
+	log_info("%s", "Yellow cross is solved, solving yellow corners");
+	numSolved = getSolvedForDownFace(rubiks, ycnCubePositions, cubesSolved);
+	log_info("Number of yellow corner pieces in correct orientation: %i", numSolved);
+	log_info("Bottom corner pieces: %i, %i, %i, %i", ycnCubePositions[0], ycnCubePositions[1], ycnCubePositions[2], ycnCubePositions[3]);
+	log_info("Solved array: %i, %i, %i, %i", cubesSolved[0], cubesSolved[1], cubesSolved[2], cubesSolved[3]);
+
+	if (numSolved == 0) {
+		for (int i=0; i<4; i++) {
+			Cube *cube = rc_getCubeAtPos(rubiks, ycnCubePositions[i]);
+			CornerPieceFaces faces = getCornerPieceFaces(cube);
+			int rightFace = cube_getShownFace(cube, faces.secondary);
+			if (rightFace == DOWN_FACE) {
+				rotateFaceToTarget(DOWN_FACE, faces.secondary, LEFT_FACE);
+				break;
+			}
+		}
+		yellowCornersRotationSequence();
+	} else if (numSolved == 1) {
+		int solvedIndex = indexOf(cubesSolved, 4, 1);
+		Cube *solvedCube = rc_getCubeAtPos(rubiks, ycnCubePositions[solvedIndex]);
+		rubiks->cubeInProgress = solvedCube->id;
+		log_info("Found cube %i at pos %i with YELLOW in DOWN", solvedCube->id, solvedCube->position);
+		CornerPieceFaces faces = getCornerPieceFaces(solvedCube);
+		rotateFaceToTarget(DOWN_FACE, faces.primary, BACK_FACE); // rotate to match pattern
+		yellowCornersRotationSequence();
+	} else if (numSolved >= 2) {
+		Cube *unsolvedCube = NULL;
+		for (int i=0; i<4; i++) {
+			if (cubesSolved[i]) {
+				continue;
+			}
+			Cube *cube = rc_getCubeAtPos(rubiks, ycnCubePositions[i]);
+			CornerPieceFaces faces = getCornerPieceFaces(cube);
+			if (cube_getShownFace(cube, faces.primary) == DOWN_FACE) {
+				unsolvedCube = cube;
+				break;
+			}
+		}
+		if (!unsolvedCube) {
+			log_fatal("%s", "UNEXPECTED STATE!");
+			exit(1);
+		} else {
+			rubiks->cubeInProgress = unsolvedCube->id;
+			log_info("Found unsolved cube %i at pos %i", unsolvedCube->id, unsolvedCube->position);
+			CornerPieceFaces faces = getCornerPieceFaces(unsolvedCube);
+			rotateFaceToTarget(DOWN_FACE, faces.primary, BACK_FACE);
+			yellowCornersRotationSequence();
+		}
+	}
 }
 
 void solveFinalLayer(Rubiks *rubiks) {
