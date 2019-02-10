@@ -41,11 +41,8 @@ typedef struct {
 	int horizontal;
 } CornerPieceFaces;
 
-RotAndDir shortestDistanceToFace(Rubiks *rubiks, int faceToRotate,
-	int startSideFace, int desiredSideFace
-);
-
-RotAndDir rotateFaceToTarget(Rubiks *rubiks, int faceToRotate, int fromFace, int toFace);
+RotAndDir shortestDistanceToFace(int faceToRotate, int startSideFace, int desiredSideFace);
+RotAndDir rotateFaceToTarget(int faceToRotate, int fromFace, int toFace);
 EdgePieceFaces getEdgePieceFaces(Cube *cube);
 CornerPieceFaces getCornerPieceFaces(Cube *cube);
 
@@ -316,12 +313,12 @@ void solveWhiteCross(Rubiks *rubiks) {
 		// TODO rework getEdgePieces so this isn't necessary
 		// if primary face is the face we want, rotate away from secondary face
 		int startFace = (faces.primary == targetFace) ? faces.secondary : faces.primary;
-		rotateFaceToTarget(rubiks, targetFace, startFace, UP_FACE);
+		rotateFaceToTarget(targetFace, startFace, UP_FACE);
 	} else if (!state.correctPos) {
 		log_info("Cube %i is in incorrect position", state.cube->id);
-		rotateFaceToTarget(rubiks, faces.primary, faces.secondary, DOWN_FACE);
-		rotateFaceToTarget(rubiks, DOWN_FACE, faces.primary, targetFace);
-		rotateFaceToTarget(rubiks, faces.primary, DOWN_FACE, faces.secondary);
+		rotateFaceToTarget(faces.primary, faces.secondary, DOWN_FACE);
+		rotateFaceToTarget(DOWN_FACE, faces.primary, targetFace);
+		rotateFaceToTarget(faces.primary, DOWN_FACE, faces.secondary);
 		// Rotation to UP_FACE handled by (in correct face) case
 	}
 }
@@ -428,7 +425,7 @@ void solveMiddleLayer(Rubiks *rubiks) {
 			log_info("Cube %i is NOT in correct side face: %c -- must be rotated.",
 				state.cube->id, faceData[faces.primary].name
 			);
-			rotateFaceToTarget(rubiks, DOWN_FACE, faces.primary, shownFace);
+			rotateFaceToTarget(DOWN_FACE, faces.primary, shownFace);
 		}
 	} else {
 		log_info("Cube %i is in MIDDLE_LAYER", state.cube->id);
@@ -443,22 +440,97 @@ void solveMiddleLayer(Rubiks *rubiks) {
 			enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
 			enqueueStep(faces.primary, COUNTERCLOCKWISE);
 		} else {
-			log_error("%s", "UNEXPECTED STATE 2");
+			log_fatal("%s", "UNEXPECTED STATE");
 			exit(1);
 		}
 	}
 }
 
+typedef enum {Line, Center, LShape, Solved, Unknown} YCrossForm;
+void yellowCrossRotationSequence(YCrossForm form) {
+	if (form == Solved) {
+		log_error("%s", "Attempting to solve already solved step!");
+	}
+	enqueueStep(BACK_FACE, CLOCKWISE);
+	enqueueStep(form ? DOWN_FACE : RIGHT_FACE, CLOCKWISE);
+	enqueueStep(form ? RIGHT_FACE : DOWN_FACE, CLOCKWISE);
+	enqueueStep(form ? DOWN_FACE : RIGHT_FACE, COUNTERCLOCKWISE);
+	enqueueStep(form ? RIGHT_FACE : DOWN_FACE, COUNTERCLOCKWISE);
+	enqueueStep(BACK_FACE, COUNTERCLOCKWISE);
+}
+
+static int ycCubePositions[4] = {19, 23, 25, 21}; // in clockwise order
+//static int yellowCornersCubeIds[4] = {18, 20, 24, 26};
 void solveDownFace(Rubiks *rubiks) {
+	// TWO STEPS:
+	// 1) Solve yellow cross
+	// 2) Solve yellow corners
+	// Don't care about colors on sides yet
+
+	log_info("%s", "Inside solveDownFace");
+	// Solve yellow cross
+	int numSolved = 0;
+	int cubesSolved[4] = {0, 0, 0, 0};
+	for (int index=0; index<4; index++) {
+		Cube *cube = rc_getCubeAtPos(rubiks, ycCubePositions[index]);
+		log_info("Cube %i at pos %i", cube->id, cube->position);
+		int face = cube_getShownFace(cube, DOWN_FACE);
+		log_info("Cube %i color shown in DOWN_FACE: %c", cube->id, faceData[face].color);
+		if (face == DOWN_FACE) {
+			numSolved++;
+			cubesSolved[index] = 1;
+		}
+	}
+	log_info("Number of yellow cross pieces in correct orientation: %i", numSolved);
+
+	YCrossForm form = Unknown;
+	if (numSolved == 4) {
+		log_info("%s", "Cross is solved");
+		form = Solved;
+	} else if (numSolved == 0) {
+		log_info("%s", "No cubes in cross are solved");
+		form = Center;
+	} else if (cubesSolved[0] && cubesSolved[2]) {
+		log_info("Straight line of cross cubes is solved: %i, %i", ycCubePositions[0], ycCubePositions[2]);
+		enqueueStep(DOWN_FACE, CLOCKWISE); // rotate to match pattern
+		form = Line;
+	} else if (cubesSolved[1] && cubesSolved[3]) {
+		log_info("Straight line of cross cubes is solved: %i, %i", ycCubePositions[1], ycCubePositions[3]);
+		form = Line;
+	} else if (numSolved == 2) {
+		int firstCube = 0;
+		int secondCube = -1;
+		for ( ; firstCube<4; firstCube++) {
+			if (cubesSolved[firstCube] && cubesSolved[(firstCube+1)%4]) {
+				secondCube = (firstCube+1)%4;
+				break;
+			}
+		}
+		if (secondCube >= 0) {
+			log_info("Cube L shape formed with cubes at positions: %i, %i",
+				ycCubePositions[firstCube], ycCubePositions[secondCube]
+			);
+			Cube *cube = rc_getCubeAtPos(rubiks, ycCubePositions[secondCube]);
+			EdgePieceFaces faces = getEdgePieceFaces(cube);
+			rotateFaceToTarget(DOWN_FACE, faces.primary, LEFT_FACE); // rotate to match pattern
+			form = LShape;
+		}
+	}
+	if (form == Unknown) {
+		log_fatal("%s", "Unable to determine yellow cross form!");
+		exit(1);
+	} else if (form != Solved) {
+		yellowCrossRotationSequence(form);
+	}
+
+	// TODO solve corners
 }
 
 void solveFinalLayer(Rubiks *rubiks) {
 }
 
 #define NUM_SIDES 4
-RotAndDir shortestDistanceToFace(Rubiks *rubiks, int faceToRotate,
-	int startSideFace, int destinationSideFace
-) {
+RotAndDir shortestDistanceToFace(int faceToRotate, int startSideFace, int destinationSideFace) {
 	log_debug("Looking for shortest distance, rotating face %c from start=%c to dest=%c",
 		faceData[faceToRotate].name, faceData[startSideFace].name, faceData[destinationSideFace].name
 	);
@@ -474,8 +546,8 @@ RotAndDir shortestDistanceToFace(Rubiks *rubiks, int faceToRotate,
 	return ret;
 }
 
-RotAndDir rotateFaceToTarget(Rubiks *rubiks, int faceToRotate, int fromFace, int toFace) {
-	RotAndDir rotdir = shortestDistanceToFace(rubiks, faceToRotate, fromFace, toFace);
+RotAndDir rotateFaceToTarget(int faceToRotate, int fromFace, int toFace) {
+	RotAndDir rotdir = shortestDistanceToFace(faceToRotate, fromFace, toFace);
 	log_info("Rotating %i%c%s to get from %c to %c",
 		rotdir.num, faceData[faceToRotate].name, rotdir.direction<0?"'":"",
 		faceData[fromFace].name, faceData[toFace].name
