@@ -359,6 +359,23 @@ void solveWhiteCorners(Rubiks *rubiks) {
 	}
 }
 
+typedef enum {DownToLeft, DownToRight, Middle, IncorrectSide, MLSolved, MLUnknown} MiddleLayerForm;
+void middleLayerRotationSequence(MiddleLayerForm form, int face1, int face2) {
+	if (form == MLSolved) {
+		log_error("%s", "Attempting to solve already solved step!");
+		exit(1);
+	}
+	int direction = form ? COUNTERCLOCKWISE : CLOCKWISE;
+	enqueueStep(DOWN_FACE, direction);
+	enqueueStep(face2, direction);
+	enqueueStep(DOWN_FACE, -1*direction);
+	enqueueStep(face2, -1*direction);
+	enqueueStep(DOWN_FACE, -1*direction);
+	enqueueStep(face1, -1*direction);
+	enqueueStep(DOWN_FACE, direction);
+	enqueueStep(face1, direction);
+}
+
 void solveMiddleLayer(Rubiks *rubiks) {
 	log_info("%s", "Inside solveMiddleLayer()");
 
@@ -382,6 +399,9 @@ void solveMiddleLayer(Rubiks *rubiks) {
 		faceData[target.secondary].name, faceData[target.secondary].color
 	);
 
+	MiddleLayerForm form = MLUnknown;
+	int faceToRotate;
+
 	if (faces.secondary == DOWN_FACE) {
 		log_info("Cube %i is in DOWN_FACE", state.cube->id);
 		int shownFace = cube_getShownFace(state.cube, faces.primary);
@@ -398,57 +418,43 @@ void solveMiddleLayer(Rubiks *rubiks) {
 				log_info("Secondary face matches target primary face: %c/%c, rotating to left position", 
 					faceData[shownFaceSecondary].name, faceData[shownFaceSecondary].color
 				);
-				int leftFace = faceData[faces.primary].neighbors[LEFT];
-				enqueueStep(DOWN_FACE, CLOCKWISE);
-				enqueueStep(leftFace, CLOCKWISE);
-				enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
-				enqueueStep(leftFace, COUNTERCLOCKWISE);
-				enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
-				enqueueStep(faces.primary, COUNTERCLOCKWISE);
-				enqueueStep(DOWN_FACE, CLOCKWISE);
-				enqueueStep(faces.primary, CLOCKWISE);
+				faceToRotate = faceData[faces.primary].neighbors[LEFT];
+				form = DownToLeft;
 			} else {
-				int rightFace = faceData[faces.primary].neighbors[RIGHT];
+				faceToRotate = faceData[faces.primary].neighbors[RIGHT];
 				log_info("Secondary face matches target right face: %c/%c, rotating to right position",
-					faceData[rightFace].name, faceData[rightFace].color
+					faceData[faceToRotate].name, faceData[faceToRotate].color
 				);
-				enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
-				enqueueStep(rightFace, COUNTERCLOCKWISE);
-				enqueueStep(DOWN_FACE, CLOCKWISE);
-				enqueueStep(rightFace, CLOCKWISE);
-				enqueueStep(DOWN_FACE, CLOCKWISE);
-				enqueueStep(faces.primary, CLOCKWISE);
-				enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
-				enqueueStep(faces.primary, COUNTERCLOCKWISE);
+				form = DownToRight;
 			}
 		} else {
 			log_info("Cube %i is NOT in correct side face: %c -- must be rotated.",
 				state.cube->id, faceData[faces.primary].name
 			);
-			rotateFaceToTarget(DOWN_FACE, faces.primary, shownFace);
+			faceToRotate = shownFace;
+			form = IncorrectSide;
 		}
 	} else {
 		log_info("Cube %i is in MIDDLE_LAYER", state.cube->id);
 		if (faces.secondary == faceData[target.primary].neighbors[RIGHT]) {
-			int rightFace = faceData[faces.primary].neighbors[RIGHT];
-			enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
-			enqueueStep(rightFace, COUNTERCLOCKWISE);
-			enqueueStep(DOWN_FACE, CLOCKWISE);
-			enqueueStep(rightFace, CLOCKWISE);
-			enqueueStep(DOWN_FACE, CLOCKWISE);
-			enqueueStep(faces.primary, CLOCKWISE);
-			enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
-			enqueueStep(faces.primary, COUNTERCLOCKWISE);
-		} else {
-			log_fatal("%s", "UNEXPECTED STATE");
-			exit(1);
+			faceToRotate = faceData[faces.primary].neighbors[RIGHT];
+			form = Middle;
 		}
+	}
+
+	if (form == MLUnknown) {
+		log_fatal("%s", "UNEXPECTED STATE");
+		exit(1);
+	} else if (form == IncorrectSide) {
+		rotateFaceToTarget(DOWN_FACE, faces.primary, faceToRotate);
+	} else {
+		middleLayerRotationSequence(form, faces.primary, faceToRotate);
 	}
 }
 
-typedef enum {Line, Center, LShape, Solved, Unknown} YCrossForm;
+typedef enum {Line, Center, LShape, YCrSolved, Unknown} YCrossForm;
 void yellowCrossRotationSequence(YCrossForm form) {
-	if (form == Solved) {
+	if (form == YCrSolved) {
 		log_error("%s", "Attempting to solve already solved step!");
 	}
 	enqueueStep(BACK_FACE, CLOCKWISE);
@@ -486,7 +492,7 @@ void solveDownFace(Rubiks *rubiks) {
 	YCrossForm form = Unknown;
 	if (numSolved == 4) {
 		log_info("%s", "Cross is solved");
-		form = Solved;
+		form = YCrSolved;
 	} else if (numSolved == 0) {
 		log_info("%s", "No cubes in cross are solved");
 		form = Center;
@@ -519,7 +525,7 @@ void solveDownFace(Rubiks *rubiks) {
 	if (form == Unknown) {
 		log_fatal("%s", "Unable to determine yellow cross form!");
 		exit(1);
-	} else if (form != Solved) {
+	} else if (form != YCrSolved) {
 		yellowCrossRotationSequence(form);
 	}
 
