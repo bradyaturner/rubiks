@@ -45,6 +45,7 @@ Vec2d rotate = {-30, 30};
 GLFWwindow *window;
 
 Rubiks rubiksCube;
+int solverEnabled = 0;
 int debug = 0;
 int demoMode = 0;
 double rotationSpeed = ROTATION_SPEED_DEFAULT;
@@ -137,8 +138,7 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 			glfwSetWindowShouldClose(window, 1);
 			break;
 		case GLFW_KEY_SPACE:
-			solver_checkSolved(&rubiksCube);
-			solver_solve(&rubiksCube);
+			solverEnabled = !solverEnabled;
 			break;
 		case GLFW_KEY_S:
 			rc_shuffle(&rubiksCube, 20);
@@ -331,14 +331,20 @@ int glapp_run(){
 	while (!glfwWindowShouldClose(window)) {
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
-		display();
-
-		if (demoMode) {
-			if(!rc_isRotating()) {
-				rc_beginFaceRotation(&rubiksCube, rand()%NUM_FACES, rand()%2==0 ? 1:-1, !animationsOn);
+		if (solverEnabled) {
+			int solved = solver_checkSolved(&rubiksCube);
+			if (solved && demoMode) {
+				rc_shuffle(&rubiksCube, 20);
+			} else if (solved && !demoMode) {
+				solverEnabled = 0;
+			} else if (!solved) {
+				solver_solve(&rubiksCube, animationsOn);
 			}
 		}
-
+		if (demoMode) {
+			rotate.y += 1;
+		}
+		display();
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
