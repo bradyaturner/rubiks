@@ -30,11 +30,21 @@ typedef struct{
 	int direction;
 } RotAndDir;
 
-RotAndDir shortestDistanceToFace(Rubiks *rubiks, int faceToRotate,
-	int startSideFace, int desiredSideFace
-);
+typedef struct {
+	int primary;
+	int secondary;
+} EdgePieceFaces;
 
-RotAndDir rotateFaceToTarget(Rubiks *rubiks, int faceToRotate, int fromFace, int toFace);
+typedef struct {
+	int primary;
+	int secondary;
+	int horizontal;
+} CornerPieceFaces;
+
+RotAndDir shortestDistanceToFace(int faceToRotate, int startSideFace, int desiredSideFace);
+RotAndDir rotateFaceToTarget(int faceToRotate, int fromFace, int toFace);
+EdgePieceFaces getEdgePieceFaces(Cube *cube);
+CornerPieceFaces getCornerPieceFaces(Cube *cube);
 
 typedef struct{
 	const char *name;
@@ -105,6 +115,13 @@ int checkWhiteCorners(Rubiks *rubiks) {
 }
 
 static int middleLayerCubeIds[4] = {9, 11, 15, 17};
+static EdgePieceFaces middleLayerFaces[4] = {
+	{BACK_FACE, LEFT_FACE},
+	{RIGHT_FACE, BACK_FACE},
+	{LEFT_FACE, FRONT_FACE},
+	{FRONT_FACE, RIGHT_FACE}
+};
+
 int checkMiddleLayer(Rubiks* rubiks) {
 	return checkCubesPosAndRot(rubiks, middleLayerCubeIds, 4);
 }
@@ -180,10 +197,42 @@ CubeSolutionState getNextUnsolved(Rubiks *rubiks, int stepCubes[], int size) {
 	return state;
 }
 
-typedef struct {
-	int primary;
-	int secondary;
-} EdgePieceFaces;
+CubeSolutionState getNextUnsolvedInFace(Rubiks *rubiks, int stepCubes[], int size, int face) {
+
+	int correctPos, correctRot;
+	int stepCubeIndex = 0;
+	Cube *cube = NULL;
+	int found = 0;
+
+	for ( ; stepCubeIndex<size; stepCubeIndex++) {
+		int id = stepCubes[stepCubeIndex];
+		cube = rc_getCubeById(rubiks, id);
+		correctPos = cube_checkPosition(cube);
+		correctRot = cube_checkRotation(cube);
+		if (!(correctPos && correctRot)) {
+			log_info("Cube %i is unsolved.", id);
+			EdgePieceFaces faces = getEdgePieceFaces(cube);
+			if (faces.secondary == face) {
+				found = 1;
+				break;
+			} else {
+				log_info("Cube %i is unsolved, but not in face:%c", cube->id, faceData[face].name);
+			}
+		} else {
+			log_debug("Cube %i is solved.", id);
+		}
+	}
+
+	CubeSolutionState state;
+	if (!found) {
+		state = (CubeSolutionState){0, 0, -1, NULL};
+	} else {
+		rubiks->cubeInProgress = cube->id;
+		state = (CubeSolutionState){correctPos, correctRot, stepCubeIndex, cube};
+	}
+
+	return state;
+}
 
 int getFaceForCube(Cube *cube, int excludeList[], int excludeListLen) {
 	int currentFace = -1;
@@ -208,20 +257,20 @@ EdgePieceFaces getEdgePieceFaces(Cube *cube) {
 	// left face should be the leftmost face, or the only side face when other is UP/DOWN
 
 	int excludes[] = {UP_FACE, DOWN_FACE};
-	int primaryFace = getFaceForCube(cube, excludes, 2);
+	int primary = getFaceForCube(cube, excludes, 2);
 
-	excludes[0] = primaryFace;
-	int secondaryFace = getFaceForCube(cube, excludes, 1);
+	excludes[0] = primary;
+	int secondary = getFaceForCube(cube, excludes, 1);
 
-	EdgePieceFaces r = {primaryFace, secondaryFace};
+	EdgePieceFaces r = {primary, secondary};
+
+	// sort left to right
+	if ((secondary != DOWN_FACE) && (secondary != UP_FACE) && (faceData[secondary].neighbors[RIGHT] == primary)) {
+		r.primary = secondary;
+		r.secondary = primary;
+	}
 	return r;
 }
-
-typedef struct {
-	int primary;
-	int secondary;
-	int horizontal;
-} CornerPieceFaces;
 
 CornerPieceFaces getCornerPieceFaces(Cube *cube) {
 	int excludes[] = {UP_FACE, DOWN_FACE, -1};
@@ -264,12 +313,12 @@ void solveWhiteCross(Rubiks *rubiks) {
 		// TODO rework getEdgePieces so this isn't necessary
 		// if primary face is the face we want, rotate away from secondary face
 		int startFace = (faces.primary == targetFace) ? faces.secondary : faces.primary;
-		rotateFaceToTarget(rubiks, targetFace, startFace, UP_FACE);
+		rotateFaceToTarget(targetFace, startFace, UP_FACE);
 	} else if (!state.correctPos) {
 		log_info("Cube %i is in incorrect position", state.cube->id);
-		rotateFaceToTarget(rubiks, faces.primary, faces.secondary, DOWN_FACE);
-		rotateFaceToTarget(rubiks, DOWN_FACE, faces.primary, targetFace);
-		rotateFaceToTarget(rubiks, faces.primary, DOWN_FACE, faces.secondary);
+		rotateFaceToTarget(faces.primary, faces.secondary, DOWN_FACE);
+		rotateFaceToTarget(DOWN_FACE, faces.primary, targetFace);
+		rotateFaceToTarget(faces.primary, DOWN_FACE, faces.secondary);
 		// Rotation to UP_FACE handled by (in correct face) case
 	}
 }
@@ -301,7 +350,70 @@ void solveWhiteCorners(Rubiks *rubiks) {
 	}
 }
 
+typedef enum {DownToLeft, DownToRight, Middle, IncorrectSide, MLSolved, MLUnknown} MiddleLayerForm;
+void middleLayerRotationSequence(MiddleLayerForm form, int face1, int face2) {
+	if (form == MLSolved) {
+		log_error("%s", "Attempting to solve already solved step!");
+		exit(1);
+	}
+	int direction = form ? COUNTERCLOCKWISE : CLOCKWISE;
+	enqueueStep(DOWN_FACE, direction);
+	enqueueStep(face2, direction);
+	enqueueStep(DOWN_FACE, -direction);
+	enqueueStep(face2, -direction);
+	enqueueStep(DOWN_FACE, -direction);
+	enqueueStep(face1, -direction);
+	enqueueStep(DOWN_FACE, direction);
+	enqueueStep(face1, direction);
+}
+
 void solveMiddleLayer(Rubiks *rubiks) {
+	log_info("%s", "Inside solveMiddleLayer()");
+
+	CubeSolutionState state = getNextUnsolvedInFace(rubiks, middleLayerCubeIds, 4, DOWN_FACE);
+	if (state.cube == NULL) {
+		state = getNextUnsolved(rubiks, middleLayerCubeIds, 4);
+	}
+	log_info("Attempting to solve edge piece %i for middle layer", state.cube->id);
+
+	EdgePieceFaces faces = getEdgePieceFaces(state.cube);
+	EdgePieceFaces target = middleLayerFaces[state.stepCubeIndex];
+
+	MiddleLayerForm form = MLUnknown;
+	int faceToRotate;
+
+	if (faces.secondary == DOWN_FACE) {
+		int shownFace = cube_getShownFace(state.cube, faces.primary);
+		int shownFaceSecondary = cube_getShownFace(state.cube, faces.secondary);
+		if ((shownFace == faces.primary) && (shownFaceSecondary == target.primary)) {
+			faceToRotate = faceData[faces.primary].neighbors[LEFT];
+			form = DownToLeft;
+		} else if (shownFace == faces.primary){
+			faceToRotate = faceData[faces.primary].neighbors[RIGHT];
+			form = DownToRight;
+		} else {
+			faceToRotate = shownFace;
+			form = IncorrectSide;
+		}
+	} else if (faces.secondary == faceData[target.primary].neighbors[RIGHT]) {
+		faceToRotate = faceData[faces.primary].neighbors[RIGHT];
+		form = Middle;
+	} else if (faces.secondary == target.primary){
+		faceToRotate = faceData[faces.primary].neighbors[RIGHT];
+		form = DownToRight; // rotate cube out of right pos
+	} else {
+		faceToRotate = faces.primary;
+		form = DownToRight;
+	}
+
+	if (form == MLUnknown) {
+		log_fatal("%s", "UNEXPECTED STATE");
+		exit(1);
+	} else if (form == IncorrectSide) {
+		rotateFaceToTarget(DOWN_FACE, faces.primary, faceToRotate);
+	} else {
+		middleLayerRotationSequence(form, faces.primary, faceToRotate);
+	}
 }
 
 void solveDownFace(Rubiks *rubiks) {
@@ -311,9 +423,7 @@ void solveFinalLayer(Rubiks *rubiks) {
 }
 
 #define NUM_SIDES 4
-RotAndDir shortestDistanceToFace(Rubiks *rubiks, int faceToRotate,
-	int startSideFace, int destinationSideFace
-) {
+RotAndDir shortestDistanceToFace(int faceToRotate, int startSideFace, int destinationSideFace) {
 	log_debug("Looking for shortest distance, rotating face %c from start=%c to dest=%c",
 		faceData[faceToRotate].name, faceData[startSideFace].name, faceData[destinationSideFace].name
 	);
@@ -329,8 +439,8 @@ RotAndDir shortestDistanceToFace(Rubiks *rubiks, int faceToRotate,
 	return ret;
 }
 
-RotAndDir rotateFaceToTarget(Rubiks *rubiks, int faceToRotate, int fromFace, int toFace) {
-	RotAndDir rotdir = shortestDistanceToFace(rubiks, faceToRotate, fromFace, toFace);
+RotAndDir rotateFaceToTarget(int faceToRotate, int fromFace, int toFace) {
+	RotAndDir rotdir = shortestDistanceToFace(faceToRotate, fromFace, toFace);
 	log_info("Rotating %i%c%s to get from %c to %c",
 		rotdir.num, faceData[faceToRotate].name, rotdir.direction<0?"'":"",
 		faceData[fromFace].name, faceData[toFace].name
