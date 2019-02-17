@@ -286,9 +286,28 @@ void printHelpText() {
 	printf("\t\tb/6: back face\n");
 }
 
-int glapp_run(){
+void glapp_init() {
+	// TODO move application initialization here
 	rc_initialize(&rubiksCube);
+}
 
+void glapp_loadState(char *fileName) {
+	rc_initialize(&rubiksCube);
+	printf("Loading state from file: %s\n", fileName);
+	FILE *fp;
+	fp = fopen(fileName, "r");
+	int c;
+	char state[2000];
+	int index = 0;
+	while ((c = getc(fp)) != EOF) {
+		state[index] = c;
+		index++;
+	}
+	state[index] = '\0';
+	rc_deserializeState(&rubiksCube, state);
+}
+
+int glapp_run(){
 	if (!glfwInit()) {
 		return EXIT_FAILURE;
 	}

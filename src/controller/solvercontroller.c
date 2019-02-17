@@ -133,6 +133,8 @@ void solver_solve(Rubiks *rubiks) {
 	}
 
 	if (queue.size == 0) {
+		log_info("%s", "Queue empty, generating next steps");
+		rc_serializeState(rubiks);
 		for (int currentStep=0; currentStep<NUM_STEPS; currentStep++) {
 			if (!checkStep(rubiks, currentStep)) {
 				(*steps[currentStep].solveFunction)(rubiks);
