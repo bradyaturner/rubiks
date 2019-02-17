@@ -416,10 +416,236 @@ void solveMiddleLayer(Rubiks *rubiks) {
 	}
 }
 
+typedef enum {Line, Center, LShape, YCrSolved, Unknown} YCrossForm;
+void yellowCrossRotationSequence(YCrossForm form) {
+	if (form == YCrSolved) {
+		log_error("%s", "Attempting to solve already solved step!");
+	}
+	enqueueStep(BACK_FACE, CLOCKWISE);
+	enqueueStep(form ? DOWN_FACE : RIGHT_FACE, CLOCKWISE);
+	enqueueStep(form ? RIGHT_FACE : DOWN_FACE, CLOCKWISE);
+	enqueueStep(form ? DOWN_FACE : RIGHT_FACE, COUNTERCLOCKWISE);
+	enqueueStep(form ? RIGHT_FACE : DOWN_FACE, COUNTERCLOCKWISE);
+	enqueueStep(BACK_FACE, COUNTERCLOCKWISE);
+}
+
+void yellowCornersRotationSequence() {
+	enqueueStep(RIGHT_FACE, CLOCKWISE);
+	enqueueStep(DOWN_FACE, CLOCKWISE);
+	enqueueStep(RIGHT_FACE, COUNTERCLOCKWISE);
+	enqueueStep(DOWN_FACE, CLOCKWISE);
+	enqueueStep(RIGHT_FACE, CLOCKWISE);
+	enqueueMultipleStep(DOWN_FACE, CLOCKWISE, 2);
+	enqueueStep(RIGHT_FACE, COUNTERCLOCKWISE);
+}
+
+typedef enum {OneCorner, TwoCorners, NoCornersLeftCube, NoCornersRightCube} YCornersForm;
+
+int getSolvedForDownFace(Rubiks *rubiks, int *positions, int *solvedList) {
+	int numSolved = 0;
+	for (int index=0; index<4; index++) {
+		Cube *cube = rc_getCubeAtPos(rubiks, positions[index]);
+		solvedList[index] = (DOWN_FACE == cube_getShownFace(cube, DOWN_FACE));
+		numSolved += solvedList[index];
+	}
+	return numSolved;
+}
+
+int getSolvedForFinalLayer(Rubiks *rubiks, int *positions, int *solvedList) {
+	int numSolved = 0;
+	for (int index=0; index<4; index++) {
+		Cube *cube = rc_getCubeAtPos(rubiks, positions[index]);
+		solvedList[index] = cube_checkPosition(cube);
+		numSolved += solvedList[index];
+	}
+	return numSolved;
+}
+
+static int yeCubePositions[4] = {19, 23, 25, 21}; // in clockwise order
+static int ycnCubePositions[4] = {18, 20, 24, 26};
 void solveDownFace(Rubiks *rubiks) {
+	// TWO STEPS:
+	// 1) Solve yellow cross
+	// 2) Solve yellow corners
+	// Don't care about colors on sides yet
+
+	log_info("%s", "Inside solveDownFace");
+	// Solve yellow cross
+	int cubesSolved[4] = {0, 0, 0, 0};
+	int numSolved = getSolvedForDownFace(rubiks, yeCubePositions, cubesSolved);
+
+	log_info("Number of yellow cross pieces in correct orientation: %i", numSolved);
+
+	YCrossForm form = Unknown;
+	if (numSolved == 4) {
+		log_info("%s", "Cross is solved");
+		form = YCrSolved;
+	} else if (numSolved == 0) {
+		log_info("%s", "No cubes in cross are solved");
+		form = Center;
+	} else if (cubesSolved[0] && cubesSolved[2]) {
+		log_info("Straight line of cross cubes is solved: %i, %i", yeCubePositions[0], yeCubePositions[2]);
+		enqueueStep(DOWN_FACE, CLOCKWISE); // rotate to match pattern
+		form = Line;
+	} else if (cubesSolved[1] && cubesSolved[3]) {
+		log_info("Straight line of cross cubes is solved: %i, %i", yeCubePositions[1], yeCubePositions[3]);
+		form = Line;
+	} else if (numSolved == 2) {
+		int firstCube = 0;
+		int secondCube = -1;
+		for ( ; firstCube<4; firstCube++) {
+			if (cubesSolved[firstCube] && cubesSolved[(firstCube+1)%4]) {
+				secondCube = (firstCube+1)%4;
+				break;
+			}
+		}
+		if (secondCube >= 0) {
+			log_info("Cube L shape formed with cubes at positions: %i, %i",
+				yeCubePositions[firstCube], yeCubePositions[secondCube]
+			);
+			Cube *cube = rc_getCubeAtPos(rubiks, yeCubePositions[secondCube]);
+			EdgePieceFaces faces = getEdgePieceFaces(cube);
+			rotateFaceToTarget(DOWN_FACE, faces.primary, LEFT_FACE); // rotate to match pattern
+			form = LShape;
+		}
+	}
+	if (form == Unknown) {
+		log_fatal("%s", "Unable to determine yellow cross form!");
+		exit(1);
+	} else if (form != YCrSolved) {
+		int unsolvedIndex = indexOf(cubesSolved, 4, 0);
+		Cube *unsolvedCube = rc_getCubeAtPos(rubiks, yeCubePositions[unsolvedIndex]);
+		rubiks->cubeInProgress = unsolvedCube->id;
+		yellowCrossRotationSequence(form);
+		return; // TODO refactor cross & corners
+	}
+
+	log_info("%s", "Yellow cross is solved, solving yellow corners");
+	numSolved = getSolvedForDownFace(rubiks, ycnCubePositions, cubesSolved);
+
+	if (numSolved == 0) {
+		// TODO refactor this and >=2 case to use same lookup -- difference is faces.secondary/primary
+		for (int i=0; i<4; i++) {
+			Cube *cube = rc_getCubeAtPos(rubiks, ycnCubePositions[i]);
+			CornerPieceFaces faces = getCornerPieceFaces(cube);
+			if (cube_getShownFace(cube, faces.secondary) == DOWN_FACE) {
+				rubiks->cubeInProgress = cube->id;
+				rotateFaceToTarget(DOWN_FACE, faces.primary, BACK_FACE);
+				break;
+			}
+		}
+		yellowCornersRotationSequence();
+	} else if (numSolved == 1) {
+		int solvedIndex = indexOf(cubesSolved, 4, 1);
+		Cube *solvedCube = rc_getCubeAtPos(rubiks, ycnCubePositions[solvedIndex]);
+		rubiks->cubeInProgress = solvedCube->id;
+		CornerPieceFaces faces = getCornerPieceFaces(solvedCube);
+		rotateFaceToTarget(DOWN_FACE, faces.primary, BACK_FACE); // rotate to match pattern
+		yellowCornersRotationSequence();
+	} else if (numSolved >= 2) {
+		for (int i=0; i<4; i++) {
+			if (cubesSolved[i]) {
+				continue;
+			}
+			Cube *cube = rc_getCubeAtPos(rubiks, ycnCubePositions[i]);
+			CornerPieceFaces faces = getCornerPieceFaces(cube);
+			if (cube_getShownFace(cube, faces.primary) == DOWN_FACE) {
+				rubiks->cubeInProgress = cube->id;
+				rotateFaceToTarget(DOWN_FACE, faces.primary, BACK_FACE);
+				break;
+			}
+		}
+		yellowCornersRotationSequence();
+	}
+}
+
+void finalLayerCornerRotationSequence(int solvedFace) {
+	int right = faceData[solvedFace].neighbors[RIGHT];
+	int front = faceData[right].neighbors[RIGHT];
+	enqueueStep(right, COUNTERCLOCKWISE);
+	enqueueStep(front, CLOCKWISE);
+	enqueueStep(right, COUNTERCLOCKWISE);
+	enqueueMultipleStep(solvedFace, CLOCKWISE, 2);
+	enqueueStep(right, CLOCKWISE);
+	enqueueStep(front, COUNTERCLOCKWISE);
+	enqueueStep(right, COUNTERCLOCKWISE);
+	enqueueMultipleStep(solvedFace, CLOCKWISE, 2);
+	enqueueMultipleStep(right, CLOCKWISE, 2);
+	enqueueStep(DOWN_FACE, COUNTERCLOCKWISE);
+}
+
+void finalLayerEdgeRotationSequence(int direction, int solvedFace) {
+	int left = faceData[solvedFace].neighbors[LEFT];
+	int right = faceData[solvedFace].neighbors[RIGHT];
+	int front = faceData[right].neighbors[RIGHT];
+	enqueueMultipleStep(front, CLOCKWISE, 2);
+	enqueueStep(DOWN_FACE, direction);
+	enqueueStep(left, CLOCKWISE);
+	enqueueStep(right, COUNTERCLOCKWISE);
+	enqueueMultipleStep(front, CLOCKWISE, 2);
+	enqueueStep(left, COUNTERCLOCKWISE);
+	enqueueStep(right, CLOCKWISE);
+	enqueueStep(DOWN_FACE, direction);
+	enqueueMultipleStep(front, CLOCKWISE, 2);
 }
 
 void solveFinalLayer(Rubiks *rubiks) {
+	log_info("%s", "Inside solveFinalLayer()");
+	int solvedList[4] = { 0, 0, 0, 0 };
+	int numSolved = getSolvedForFinalLayer(rubiks, ycnCubePositions, solvedList);
+	log_info("Num solved: %i", numSolved);
+	int sequenceFace = -1;
+	if (numSolved == 4) {
+		log_info("%s", "All 4 corners solved! Progress to next step.");
+	} else if (numSolved < 2) {
+		enqueueStep(DOWN_FACE, CLOCKWISE);
+		return;
+	} else if (solvedList[0] && solvedList[1]) {
+		sequenceFace = FRONT_FACE;
+	} else if (solvedList[2] && solvedList[3]) {
+		sequenceFace = BACK_FACE;
+	} else if (solvedList[0] && solvedList[3]) {
+		sequenceFace = FRONT_FACE;
+	} else if (solvedList[1] && solvedList[2]) {
+		sequenceFace = FRONT_FACE;
+	} else if (solvedList[1] && solvedList[3]) {
+		sequenceFace = RIGHT_FACE;
+	} else if (solvedList[0] && solvedList[2]) {
+		sequenceFace = LEFT_FACE;
+	} else {
+		log_fatal("%s", "Unexpected state!");
+		exit(1);
+	}
+	if (numSolved < 4 && sequenceFace >= 0) {
+		finalLayerCornerRotationSequence(sequenceFace);
+		return;
+	}
+
+	log_info("%s", "Solve final layer, part 2: edge pieces");
+	numSolved = getSolvedForFinalLayer(rubiks, yeCubePositions, solvedList);
+	log_info("Num yellow edge pieces solved: %i", numSolved);
+	if (numSolved == 4) {
+		log_error("%s", "Nothing to do!");
+	} else if (!numSolved) {
+		finalLayerEdgeRotationSequence(CLOCKWISE, BACK_FACE);
+	} else if (numSolved == 1) {
+		int solvedIndex = indexOf(solvedList, 4, 1);
+		int cubePos = yeCubePositions[solvedIndex];
+		Cube *cube = rc_getCubeAtPos(rubiks, cubePos);
+		log_debug("One edge piece solved: %i at pos %i", cube->id, cube->position);
+		EdgePieceFaces faces = getEdgePieceFaces(cube);
+		log_debug("Resides in faces: %c and %c", faceData[faces.primary].name, faceData[faces.secondary].name);
+
+		int oppositeCubePos = yeCubePositions[(solvedIndex+2)%4];
+		Cube *oppositeCube = rc_getCubeAtPos(rubiks, oppositeCubePos);
+		EdgePieceFaces oppositeFaces = getEdgePieceFaces(oppositeCube);
+		int oppositeCubeFace = cube_getShownFace(oppositeCube, oppositeFaces.primary);
+		int direction = CLOCKWISE;
+		if (oppositeCubeFace == faceData[faces.primary].neighbors[RIGHT]) {
+			direction = COUNTERCLOCKWISE;
+		}
+		finalLayerEdgeRotationSequence(direction, faces.primary);
+	}
 }
 
 #define NUM_SIDES 4
