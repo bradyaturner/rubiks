@@ -138,6 +138,7 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 			break;
 		case GLFW_KEY_SPACE:
 			solver_checkSolved(&rubiksCube);
+			solver_solve(&rubiksCube);
 			break;
 		case GLFW_KEY_S:
 			rc_shuffle(&rubiksCube, 20);
@@ -305,6 +306,8 @@ int glapp_run(){
 	glClearColor(0.85, 0.85, 0.85, 0.0);
 
 	printHelpText();
+
+	solver_init();
 
 	while (!glfwWindowShouldClose(window)) {
 		int width, height;
