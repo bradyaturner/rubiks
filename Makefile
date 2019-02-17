@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS= -g -Wall -Werror -I $(INCDIR)
+CFLAGS= -g -Wall -Werror -I $(INCDIR) -std=c99
 LDFLAGS = $(libgl) -lm
 
 SRCDIR		:= src
@@ -28,6 +28,7 @@ dep = $(obj:.$(OBJEXT)=.$(DEPEXT)) # one dependency file for each source
 -include $(dep)	# include all dep files in the Makefile
 
 $(APP): $(obj)
+	@mkdir -p bin
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 # rule to generate a dep file by using the C preprocessor

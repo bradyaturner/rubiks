@@ -23,11 +23,11 @@ static int rc_getFace(Rubiks *rubiks, int face, Cube* cubes[]);
 
 void rc_rotateFace(Rubiks *rubiks, int face, int direction) {
 	if (face > NUM_FACES || face < 0) {
-		log_fatal("Attempted to rotate invalid face #%i\n", face);
+		log_fatal("Attempted to rotate invalid face #%i", face);
 		exit(1);
 	}
-	log_trace("rc_rotateFace(%i): [%i, %i, %i, %i, %i, %i, %i, %i, %i] -> {%i, %i, %i} direction: %sclockwise\n",
-		face, faces[face][0], faces[face][1], faces[face][2], faces[face][3], faces[face][4], faces[face][5],
+	log_debug("rc_rotateFace(%c): [%i, %i, %i, %i, %i, %i, %i, %i, %i] -> {%i, %i, %i} direction: %sclockwise",
+		faceData[face].name, faces[face][0], faces[face][1], faces[face][2], faces[face][3], faces[face][4], faces[face][5],
 		faces[face][6], faces[face][7], faces[face][8], faceData[face].rotation.x, faceData[face].rotation.y,
 		faceData[face].rotation.z, direction==CLOCKWISE ? "":"counter"
 	);
@@ -35,7 +35,7 @@ void rc_rotateFace(Rubiks *rubiks, int face, int direction) {
 	rc_getFace(rubiks, face, cubes);
 	int newPositions[FACE_SIZE];
 	for (int i=0; i<9; i++) {
-		log_debug("Determining new position for cube at position %i == faces[%i][%i]=%i\n",
+		log_debug("Determining new position for cube at position %i == faces[%i][%i]=%i",
 			cubes[i]->position,
 			face, i, faces[face][i]);
 
@@ -62,7 +62,7 @@ void rc_translateFace(Rubiks *rubiks, const int face[], const int translation[])
 	}
 
 	for (int i=0; i<FACE_SIZE; i++) {
-		log_debug("Rotating cube w/ ID=%i at position %i to position %i\n",
+		log_debug("Rotating cube w/ ID=%i at position %i to position %i",
 			cubes[i]->id,
 			cubes[i]->position,
 			translation[i]
@@ -80,16 +80,24 @@ Cube* rc_getCubeAtPos(Rubiks *rubiks, int cubePosition) {
 		}
 	}
 	if (cube == NULL) {
-		log_fatal("FAILED TO LOCATE CUBE AT POSTITION %i\n", cubePosition);
+		log_fatal("FAILED TO LOCATE CUBE AT POSTITION %i", cubePosition);
 		exit(1);
 	}
 	return cube;
+}
+
+Cube* rc_getCubeById(Rubiks *rubiks, int cubeId) {
+	if (cubeId < 0 || cubeId > NUM_CUBES-1) {
+		log_fatal("CUBE ID OUTSIDE RANGE! cubeId=%i", cubeId);
+	}
+	return &rubiks->cubes[cubeId];
 }
 
 void rc_initialize(Rubiks *rubiks) {
 	for (int i = 0; i<NUM_CUBES; i++) {
 		cube_initialize(&rubiks->cubes[i], i, i);
 	}
+	rubiks->cubeInProgress = -1;
 }
 
 void rc_reset(Rubiks *rubiks) {
@@ -104,10 +112,10 @@ int rc_getFace(Rubiks *rubiks, int face, Cube* cubes[]) {
 		log_trace("Looking for cube at position = %i", pos);
 		cubes[i] = rc_getCubeAtPos(rubiks, pos);
 		if (cubes[i] == NULL) {
-			log_fatal("No cube found at position %i in face %i\n", pos, face);
+			log_fatal("No cube found at position %i in face %i", pos, face);
 			return -1;
 		}
-		log_trace("Found cube with ID: %i\n", cubes[i]->id);
+		log_trace("Found cube with ID: %i", cubes[i]->id);
 	}
 	return 1;
 }
@@ -132,20 +140,41 @@ int rc_serialize(Rubiks *rubiks, char* out) {
 	return 1;
 }
 
+void rc_serializeState(Rubiks *rubiks) {
+	for (int i=0; i<NUM_CUBES; i++) {
+		Cube *cube = &rubiks->cubes[i];
+		printf("%i:%.10f:%.10f:%.10f:%.10f;", cube->position, cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);
+	}
+	printf("\n");
+}
+
+void rc_deserializeState(Rubiks *rubiks, char* statestr) {
+	int posn;
+	for (int i=0; i<NUM_CUBES; i++) {
+		int pos;
+		float x, y, z, w;
+		sscanf(statestr, "%i:%f:%f:%f:%f;%n", &pos, &x, &y, &z, &w, &posn);
+		log_info("Loading cube %i: pos: %i", i, pos);
+		rubiks->cubes[i].position = pos;
+		rubiks->cubes[i].quat = (Quaternion) {x, y, z, w};
+		statestr += posn;
+	}
+}
+
 int rc_getFaceColors(Rubiks *rubiks, int face, char* colors) {
 	Cube* cubes[FACE_SIZE];
 	rc_getFace(rubiks, face, cubes);
-	printf("Finding cubes for face: %c\n", faceData[face].name);
+	log_debug("Finding cubes for face: %c", faceData[face].name);
 	for (int i=0; i<FACE_SIZE; i++) {
 
 		// iterate over each cube in face (cubes[0..FACE_SIZE])
 		// for each cube in face, iterate over its faces
 		int fn = cube_getShownFace(cubes[i], face);
-		printf("\tFound in face: %c\n", faceData[fn].name);
+		log_debug("\tFound in face: %c", faceData[fn].name);
 		if (fn != -1) {
 			colors[i] = faceData[fn].color;
 		} else {
-			log_fatal("Failed to find a visible face for cube: %i\n", cubes[i]->id);
+			log_fatal("Failed to find a visible face for cube: %i", cubes[i]->id);
 			exit(1);
 		}
 	}

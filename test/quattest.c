@@ -82,11 +82,11 @@ int main() {
 	for(int i=0; i<NUM_CASES; i++) {
 		numPassed += test(cases[i]);
 	}
-	log_info("Test complete. Passed %i out of %i test cases.\n", numPassed, NUM_CASES);
+	log_info("Test complete. Passed %i out of %i test cases.", numPassed, NUM_CASES);
 }
 
 int test(TestCase c) {
-	log_info("Vector:                           {%f, %f, %f}\n", c.vector.x, c.vector.y, c.vector.z);
+	log_info("Vector:                           {%f, %f, %f}", c.vector.x, c.vector.y, c.vector.z);
 
 	Vec3f result = c.vector;
 	int isEqual = 1;
@@ -95,14 +95,14 @@ int test(TestCase c) {
 			continue;
 		Quaternion qRot;
 		quatInitEuler(&qRot, c.rotations[i]);
-		log_info("Applying rotation #%i\n", i);
-		log_info("Rotation angles:              {%f, %f, %f}\n", c.rotations[i].x, c.rotations[i].y, c.rotations[i].z);
-		log_info("Quaternion from angles:       {%f, %f, %f, %f}\n", qRot.x, qRot.y, qRot.z, qRot.w);
+		log_info("Applying rotation #%i", i);
+		log_info("Rotation angles:              {%f, %f, %f}", c.rotations[i].x, c.rotations[i].y, c.rotations[i].z);
+		log_info("Quaternion from angles:       {%f, %f, %f, %f}", qRot.x, qRot.y, qRot.z, qRot.w);
 		result = quatVecMultiply(&qRot, result);
-		log_info("Vector, rotated:              {%f, %f, %f}\n", result.x, result.y, result.z);
-		log_info("Vector, expected:             {%f, %f, %f}\n", c.expected[i].x, c.expected[i].y, c.expected[i].z);
+		log_info("Vector, rotated:              {%f, %f, %f}", result.x, result.y, result.z);
+		log_info("Vector, expected:             {%f, %f, %f}", c.expected[i].x, c.expected[i].y, c.expected[i].z);
 		isEqual &= vec3fCompare(result, c.expected[i]);
 	}
-	log_info("Calculated result is%s correct.\n\n", isEqual ? "":"n't");
+	log_info("Calculated result is%s correct.\n", isEqual ? "":"n't");
 	return isEqual;
 }

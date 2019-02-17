@@ -9,6 +9,7 @@
 #include "rubiks.h"
 #include "view/rubiksview.h"
 #include "controller/rubikscontroller.h"
+#include "controller/solvercontroller.h"
 #include "cube.h"
 #include "view/cubeview.h"
 #include "vector.h"
@@ -32,6 +33,8 @@ void increaseRotationSpeed();
 void decreaseRotationSpeed();
 void resetRotationSpeed();
 void rc_toggleAnimations();
+void toggleDemoMode();
+void toggleAutorotate();
 
 // Drawing functions
 void drawAxisLines();
@@ -39,18 +42,30 @@ void drawAxisLines();
 // Debug functions
 void resetDebugInfo();
 
-Vec2d rotate = {0, 0};
+Vec2d rotate = {-30, 30};
 
 GLFWwindow *window;
 
 Rubiks rubiksCube;
+int solverEnabled = 0;
 int debug = 0;
 int demoMode = 0;
+int autorotate = 0;
 double rotationSpeed = ROTATION_SPEED_DEFAULT;
 
 void rc_toggleAnimations() {
 	animationsOn = !animationsOn;
-	log_info("Animations %s\n", animationsOn ? "ON" : "OFF");
+	log_info("Animations %s", animationsOn ? "ON" : "OFF");
+}
+
+void toggleDemoMode() {
+	demoMode = !demoMode;
+	log_info("Demo mode %s", demoMode ? "ON" : "OFF");
+}
+
+void toggleAutorotate() {
+	autorotate = !autorotate;
+	log_info("Autorotate %s", autorotate ? "ON" : "OFF");
 }
 
 void display(){
@@ -108,7 +123,7 @@ void drawAxisLines() {
 void resetDebugInfo() {
 	for (int i=0; i<NUM_CUBES; i++) {
 		Cube* cube = &rubiksCube.cubes[i];
-		log_info("Cube #%i at position: %i, quaternion: {%f, %f, %f, %f}\n",
+		log_info("Cube #%i at position: %i, quaternion: {%f, %f, %f, %f}",
 			i, cube->position, cube->quat.x, cube->quat.y, cube->quat.z, cube->quat.w);
 	}
 	for (int i=0; i<NUM_FACES; i++) {
@@ -128,12 +143,15 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		return;
 	}
 
-	log_debug("Key pressed: %i\n", key);
+	log_debug("Key pressed: %i", key);
 	switch (key)
 	{
 		case GLFW_KEY_ESCAPE:
 		case GLFW_KEY_Q:
 			glfwSetWindowShouldClose(window, 1);
+			break;
+		case GLFW_KEY_SPACE:
+			solverEnabled = !solverEnabled;
 			break;
 		case GLFW_KEY_S:
 			rc_shuffle(&rubiksCube, 20);
@@ -151,11 +169,15 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 			if (mods==0) {
 				debug = !debug;
 			} else if (mods == GLFW_MOD_SHIFT) {
-				demoMode = !demoMode;
+				toggleDemoMode();
 			}
 			break;
 		case GLFW_KEY_A:
-			rc_toggleAnimations();
+			if (mods==0) {
+				rc_toggleAnimations();
+			} else if (mods == GLFW_MOD_SHIFT) {
+				toggleAutorotate();
+			}
 			break;
 		case GLFW_KEY_EQUAL:
 			if (mods==0) {
@@ -206,9 +228,9 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		case GLFW_KEY_D:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rc_beginFaceRotation(&rubiksCube, BOTTOM_FACE, CLOCKWISE, !animationsOn);
+					rc_beginFaceRotation(&rubiksCube, DOWN_FACE, CLOCKWISE, !animationsOn);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rc_beginFaceRotation(&rubiksCube, BOTTOM_FACE, COUNTERCLOCKWISE, !animationsOn);
+					rc_beginFaceRotation(&rubiksCube, DOWN_FACE, COUNTERCLOCKWISE, !animationsOn);
 				}
 			}
 			break;
@@ -216,9 +238,9 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		case GLFW_KEY_U:
 			if (action == GLFW_PRESS) {
 				if (mods==0) {
-					rc_beginFaceRotation(&rubiksCube, TOP_FACE, CLOCKWISE, !animationsOn);
+					rc_beginFaceRotation(&rubiksCube, UP_FACE, CLOCKWISE, !animationsOn);
 				} else if (mods == GLFW_MOD_SHIFT) {
-					rc_beginFaceRotation(&rubiksCube, TOP_FACE, COUNTERCLOCKWISE, !animationsOn);
+					rc_beginFaceRotation(&rubiksCube, UP_FACE, COUNTERCLOCKWISE, !animationsOn);
 				}
 			}
 			break;
@@ -259,6 +281,7 @@ void printHelpText() {
 	printf("\t\tc: enable/disable debug mode\n");
 	printf("\t\tC: enable/disable demo mode\n");
 	printf("\t\ta: enable/disable animations\n");
+	printf("\t\tA: enable/disable autorotate\n");
 	printf("\t\t+: increase rotation speed\n");
 	printf("\t\t-: decrease rotation speed\n");
 	printf("\t\t=: reset rotation speed\n");
@@ -281,16 +304,35 @@ void printHelpText() {
 	printf("\t\tb/6: back face\n");
 }
 
-int glapp_run(){
+void glapp_init() {
+	// TODO move application initialization here
 	rc_initialize(&rubiksCube);
+}
 
+void glapp_loadState(char *fileName) {
+	rc_initialize(&rubiksCube);
+	printf("Loading state from file: %s\n", fileName);
+	FILE *fp;
+	fp = fopen(fileName, "r");
+	int c;
+	char state[2000];
+	int index = 0;
+	while ((c = getc(fp)) != EOF) {
+		state[index] = c;
+		index++;
+	}
+	state[index] = '\0';
+	rc_deserializeState(&rubiksCube, state);
+}
+
+int glapp_run(){
 	if (!glfwInit()) {
 		return EXIT_FAILURE;
 	}
 
 	window = glfwCreateWindow(800, 800, "Rubik's Cube", NULL, NULL);
 	if (!window) {
-		log_fatal("%s\n","Problem creating window!");
+		log_fatal("%s","Problem creating window!");
 		return 1;
 	}
 	glfwMakeContextCurrent(window);
@@ -302,17 +344,25 @@ int glapp_run(){
 
 	printHelpText();
 
+	solver_init();
+
 	while (!glfwWindowShouldClose(window)) {
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
-		display();
-
-		if (demoMode) {
-			if(!rc_isRotating()) {
-				rc_beginFaceRotation(&rubiksCube, rand()%NUM_FACES, rand()%2==0 ? 1:-1, !animationsOn);
+		if (solverEnabled) {
+			int solved = solver_checkSolved(&rubiksCube);
+			if (solved && demoMode) {
+				rc_shuffle(&rubiksCube, 20);
+			} else if (solved && !demoMode) {
+				solverEnabled = 0;
+			} else if (!solved) {
+				solver_solve(&rubiksCube, animationsOn);
 			}
 		}
-
+		if (autorotate) {
+			rotate.y += 1;
+		}
+		display();
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}

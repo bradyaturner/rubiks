@@ -12,12 +12,14 @@
 
 typedef struct {
 	Cube cubes[NUM_CUBES];
+	int cubeInProgress;
 } Rubiks;
 
 // Data management
 void rc_initialize(Rubiks *rubiks);
 void rc_reset(Rubiks *rubiks);
 Cube* rc_getCubeAtPos(Rubiks *rubiks, int cubePosition);
+Cube* rc_getCubeById(Rubiks *rubiks, int cubeId);
 
 // Control
 void rc_rotateFace(Rubiks *rubiks, int face, int direction);
@@ -30,5 +32,8 @@ int rc_checkCubeInFace(Cube *cube, int face);
 // Serialization methods
 int rc_serialize(Rubiks *rubiks, char* out);
 int rc_getFaceColors(Rubiks *rubiks, int face, char* colors);
+
+void rc_serializeState(Rubiks *rubiks);
+void rc_deserializeState(Rubiks *rubiks, char* state);
 
 #endif

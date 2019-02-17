@@ -20,7 +20,11 @@ void rc_draw(Rubiks *rubiks){
 		Vec3f cubeCoord = vec3fMultiplyScalar(rc_determineCubeCoord(cube), cubeWidth);
 		glPushMatrix();
 		rc_getFaceRotation(cube);
-		cube_draw(*cube, cubeCoord, lineColor, cubeWidth);
+		if (cube->id == rubiks->cubeInProgress) {
+			cube_draw(*cube, cubeCoord, inProgressLineColor, cubeWidth);
+		} else {
+			cube_draw(*cube, cubeCoord, lineColor, cubeWidth);
+		}
 		glPopMatrix();
 	}
 }
