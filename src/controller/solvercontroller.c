@@ -144,7 +144,7 @@ int checkFinalLayer(Rubiks* rubiks) {
 	return checkCubesPosAndRot(rubiks, downFaceCubeIds, DOWN_FACE_NUM_CUBES);
 }
 
-void solver_solve(Rubiks *rubiks) {
+void solver_solve(Rubiks *rubiks, int animationsOn) {
 	if (rc_isRotating()) {
 		return;
 	}
@@ -163,7 +163,7 @@ void solver_solve(Rubiks *rubiks) {
 	if ((queue.size > 0 && !rc_isRotating())) {
 		Step step = dequeue(&queue);
 		log_info("Next step on queue: %c%s", faceData[step.face].name, (step.direction<0?"'":""));
-		rc_beginFaceRotation(rubiks, step.face, step.direction, 0);
+		rc_beginFaceRotation(rubiks, step.face, step.direction, !animationsOn);
 	}
 }
 

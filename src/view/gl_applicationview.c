@@ -33,6 +33,8 @@ void increaseRotationSpeed();
 void decreaseRotationSpeed();
 void resetRotationSpeed();
 void rc_toggleAnimations();
+void toggleDemoMode();
+void toggleAutorotate();
 
 // Drawing functions
 void drawAxisLines();
@@ -45,13 +47,25 @@ Vec2d rotate = {-30, 30};
 GLFWwindow *window;
 
 Rubiks rubiksCube;
+int solverEnabled = 0;
 int debug = 0;
 int demoMode = 0;
+int autorotate = 0;
 double rotationSpeed = ROTATION_SPEED_DEFAULT;
 
 void rc_toggleAnimations() {
 	animationsOn = !animationsOn;
 	log_info("Animations %s", animationsOn ? "ON" : "OFF");
+}
+
+void toggleDemoMode() {
+	demoMode = !demoMode;
+	log_info("Demo mode %s", demoMode ? "ON" : "OFF");
+}
+
+void toggleAutorotate() {
+	autorotate = !autorotate;
+	log_info("Autorotate %s", autorotate ? "ON" : "OFF");
 }
 
 void display(){
@@ -137,8 +151,7 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 			glfwSetWindowShouldClose(window, 1);
 			break;
 		case GLFW_KEY_SPACE:
-			solver_checkSolved(&rubiksCube);
-			solver_solve(&rubiksCube);
+			solverEnabled = !solverEnabled;
 			break;
 		case GLFW_KEY_S:
 			rc_shuffle(&rubiksCube, 20);
@@ -156,11 +169,15 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 			if (mods==0) {
 				debug = !debug;
 			} else if (mods == GLFW_MOD_SHIFT) {
-				demoMode = !demoMode;
+				toggleDemoMode();
 			}
 			break;
 		case GLFW_KEY_A:
-			rc_toggleAnimations();
+			if (mods==0) {
+				rc_toggleAnimations();
+			} else if (mods == GLFW_MOD_SHIFT) {
+				toggleAutorotate();
+			}
 			break;
 		case GLFW_KEY_EQUAL:
 			if (mods==0) {
@@ -264,6 +281,7 @@ void printHelpText() {
 	printf("\t\tc: enable/disable debug mode\n");
 	printf("\t\tC: enable/disable demo mode\n");
 	printf("\t\ta: enable/disable animations\n");
+	printf("\t\tA: enable/disable autorotate\n");
 	printf("\t\t+: increase rotation speed\n");
 	printf("\t\t-: decrease rotation speed\n");
 	printf("\t\t=: reset rotation speed\n");
@@ -331,14 +349,20 @@ int glapp_run(){
 	while (!glfwWindowShouldClose(window)) {
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
-		display();
-
-		if (demoMode) {
-			if(!rc_isRotating()) {
-				rc_beginFaceRotation(&rubiksCube, rand()%NUM_FACES, rand()%2==0 ? 1:-1, !animationsOn);
+		if (solverEnabled) {
+			int solved = solver_checkSolved(&rubiksCube);
+			if (solved && demoMode) {
+				rc_shuffle(&rubiksCube, 20);
+			} else if (solved && !demoMode) {
+				solverEnabled = 0;
+			} else if (!solved) {
+				solver_solve(&rubiksCube, animationsOn);
 			}
 		}
-
+		if (autorotate) {
+			rotate.y += 1;
+		}
+		display();
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
